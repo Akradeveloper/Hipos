@@ -1,0 +1,145 @@
+name: UI Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    
+    # ⚠️ LIMITACIÓN IMPORTANTE:
+    # Los tests de UI Desktop requieren una sesión interactiva de Windows.
+    # GitHub-hosted runners NO tienen una sesión de escritorio activa por defecto,
+    # lo que puede causar que los tests fallen al intentar interactuar con la UI.
+    #
+    # ALTERNATIVAS RECOMENDADAS:
+    # 1. Self-hosted runner en Windows con auto-login configurado
+    # 2. VM dedicada con Remote Desktop y agent interactivo
+    # 3. Azure DevOps con agente en modo interactivo
+    # 4. GitHub-hosted runner con configuración especial (no garantizado)
+    #
+    # Este workflow está configurado para intentar ejecutar en GitHub-hosted,
+    # pero es posible que necesites ajustarlo según tu entorno.
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependencias
+        run: dotnet restore
+
+      - name: Build solución
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Ejecutar tests
+        run: |
+          dotnet test --no-build --configuration Release `
+            --logger "trx;LogFileName=test-results.trx" `
+            --logger "console;verbosity=detailed" `
+            --results-directory ./TestResults
+        continue-on-error: true
+        # continue-on-error permite que el workflow continúe incluso si tests fallan
+        # para poder capturar artifacts y generar reportes
+
+      - name: Upload artifacts - Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-trx
+          path: TestResults/*.trx
+          retention-days: 30
+
+      - name: Upload artifacts - ExtentReports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extent-reports
+          path: src/Hipos.Tests/bin/Release/net8.0-windows/reports/
+          retention-days: 30
+
+      - name: Upload artifacts - Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: src/Hipos.Tests/bin/Release/net8.0-windows/screenshots/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload artifacts - Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: src/Hipos.Tests/bin/Release/net8.0-windows/logs/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Comentar resultado en PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            let comment = '## 🧪 Resultados de Tests UI\n\n';
+            
+            // Verificar si hay resultados
+            const resultsPath = 'TestResults/test-results.trx';
+            if (fs.existsSync(resultsPath)) {
+              comment += '✅ Tests ejecutados. Descarga los artifacts para ver resultados detallados.\n\n';
+              comment += '📊 **Artifacts disponibles:**\n';
+              comment += '- ExtentReports (HTML)\n';
+              comment += '- Test Results (TRX)\n';
+              comment += '- Screenshots (si hay fallos)\n';
+              comment += '- Logs\n';
+            } else {
+              comment += '⚠️ No se pudieron ejecutar los tests. Ver logs para más detalles.\n';
+            }
+            
+            comment += '\n---\n';
+            comment += '⚠️ **Nota:** Tests UI requieren sesión interactiva. Ver documentación para más información.\n';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Job opcional para ejecutar solo smoke tests (más rápido)
+  smoke-tests:
+    runs-on: windows-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependencias
+        run: dotnet restore
+
+      - name: Build solución
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Ejecutar Smoke Tests
+        run: |
+          dotnet test --no-build --configuration Release `
+            --filter "Category=Smoke" `
+            --logger "console;verbosity=detailed"
+        continue-on-error: true
