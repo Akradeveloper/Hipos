@@ -16,6 +16,7 @@ public class TestHooks
 {
     private static bool _isInitialized = false;
     private static readonly object _initLock = new();
+    private static CucumberJsonReportGenerator? _cucumberReportGenerator;
     
     [BeforeTestRun]
     public static void BeforeTestRun()
@@ -36,6 +37,13 @@ public class TestHooks
             // Inicializar ExtentReports
             var reportPath = Path.Combine(Directory.GetCurrentDirectory(), "reports", "extent-report.html");
             ExtentReportManager.InitializeReport(reportPath);
+
+            // Inicializar generador de reportes Cucumber JSON
+            var cucumberJsonPath = ConfigManager.Instance.GetValue("Reporting:CucumberJsonPath", "reports/cucumber.json");
+            var fullCucumberPath = Path.Combine(Directory.GetCurrentDirectory(), cucumberJsonPath);
+            _cucumberReportGenerator = new CucumberJsonReportGenerator();
+            _cucumberReportGenerator.Initialize(fullCucumberPath);
+            Log.Information("Generador Cucumber JSON inicializado: {Path}", fullCucumberPath);
 
             try
             {
@@ -220,6 +228,17 @@ public class TestHooks
                 Log.Warning(ex, "Error al finalizar reporte");
             }
             
+            // Generar reporte Cucumber JSON
+            try
+            {
+                _cucumberReportGenerator?.GenerateReport();
+                Log.Information("Reporte Cucumber JSON generado: {ReportPath}", _cucumberReportGenerator?.ReportPath);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error al generar reporte Cucumber JSON");
+            }
+            
             // Dispose del AppLauncher
             try
             {
@@ -240,12 +259,22 @@ public class TestHooks
     }
 
     [BeforeScenario]
-    public void BeforeScenario(ScenarioContext scenarioContext)
+    public void BeforeScenario(ScenarioContext scenarioContext, FeatureContext featureContext)
     {
         var scenarioTitle = scenarioContext.ScenarioInfo.Title;
         var scenarioDescription = scenarioContext.ScenarioInfo.Description;
         
         Log.Information("==== Iniciando escenario: {ScenarioTitle} ====", scenarioTitle);
+        
+        // Registrar escenario en Cucumber JSON
+        try
+        {
+            _cucumberReportGenerator?.StartScenario(scenarioContext.ScenarioInfo, featureContext.FeatureInfo);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al registrar escenario en Cucumber JSON");
+        }
         
         // Asegurar que la ventana esté SIEMPRE en primer plano antes de cada escenario
         try
@@ -288,6 +317,35 @@ public class TestHooks
         scenarioContext["ScenarioTitle"] = scenarioTitle;
     }
 
+    [BeforeStep]
+    public void BeforeStep(ScenarioContext scenarioContext)
+    {
+        try
+        {
+            var stepInfo = scenarioContext.StepContext.StepInfo;
+            _cucumberReportGenerator?.StartStep(stepInfo);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al registrar inicio de step en Cucumber JSON");
+        }
+    }
+
+    [AfterStep]
+    public void AfterStep(ScenarioContext scenarioContext)
+    {
+        try
+        {
+            var stepStatus = scenarioContext.ScenarioExecutionStatus;
+            var error = scenarioContext.TestError;
+            _cucumberReportGenerator?.FinishStep(stepStatus, error);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al registrar fin de step en Cucumber JSON");
+        }
+    }
+
     [AfterScenario]
     public void AfterScenario(ScenarioContext scenarioContext)
     {
@@ -295,6 +353,8 @@ public class TestHooks
         var testStatus = scenarioContext.ScenarioExecutionStatus;
         
         Log.Information("Escenario {ScenarioTitle} finalizado con estado: {Status}", scenarioTitle, testStatus);
+        
+        string? screenshotPath = null;
         
         try
         {
@@ -304,7 +364,7 @@ public class TestHooks
                 testStatus == ScenarioExecutionStatus.UndefinedStep)
             {
                 Log.Warning("Escenario falló, capturando screenshot");
-                var screenshotPath = ScreenshotHelper.TakeScreenshot(scenarioTitle);
+                screenshotPath = ScreenshotHelper.TakeScreenshot(scenarioTitle);
                 
                 if (!string.IsNullOrEmpty(screenshotPath) && File.Exists(screenshotPath))
                 {
@@ -329,6 +389,18 @@ public class TestHooks
         catch (Exception ex)
         {
             Log.Error(ex, "Error al capturar evidencias en AfterScenario");
+        }
+        
+        // Finalizar escenario en Cucumber JSON
+        try
+        {
+            var includeScreenshots = ConfigManager.Instance.GetValue("Reporting:IncludeScreenshots", "true") == "true";
+            var screenshotToInclude = includeScreenshots ? screenshotPath : null;
+            _cucumberReportGenerator?.FinishScenario(testStatus, scenarioContext.TestError, screenshotToInclude);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al finalizar escenario en Cucumber JSON");
         }
         
         Log.Information("==== Escenario finalizado: {ScenarioTitle} ====\n", scenarioTitle);
