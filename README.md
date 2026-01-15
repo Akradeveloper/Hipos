@@ -213,6 +213,120 @@ Invoke-Item src\Hipos.Tests\bin\Debug\net8.0-windows\reports\extent-report.html
 - ⏱️ Tiempos de ejecución y performance
 - 🌙 Tema oscuro para mejor legibilidad
 
+## 🔗 Integración con Jira/Xray
+
+El framework genera automáticamente reportes en formato **Cucumber JSON** compatibles con **Jira Xray** para integración con sistemas de gestión de pruebas.
+
+### Generación Automática
+
+Cada vez que ejecutas los tests, se genera automáticamente un archivo `cucumber.json`:
+
+```bash
+# Ejecutar tests
+dotnet test
+
+# El archivo se genera en:
+src\Hipos.Tests\bin\Debug\net8.0-windows\reports\cucumber.json
+```
+
+### Configuración
+
+Puedes personalizar la generación del reporte en `appsettings.json`:
+
+```json
+{
+  "Reporting": {
+    "CucumberJsonPath": "reports/cucumber.json",
+    "IncludeScreenshots": true
+  }
+}
+```
+
+**Opciones:**
+- `CucumberJsonPath`: Ruta donde se guardará el archivo JSON
+- `IncludeScreenshots`: Incluir screenshots como base64 en el JSON (para fallos)
+
+### Importar a Xray
+
+#### Opción 1: Interfaz Web de Xray
+
+1. Ir a tu proyecto en Jira
+2. Navegar a **Xray** → **Import Execution Results**
+3. Seleccionar formato: **Cucumber JSON**
+4. Subir el archivo `cucumber.json`
+5. Configurar opciones de importación (crear nuevos tests, actualizar existentes, etc.)
+
+#### Opción 2: API REST de Xray
+
+```bash
+# Xray Cloud
+curl -H "Content-Type: application/json" \
+     -X POST \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     --data @cucumber.json \
+     https://xray.cloud.getxray.app/api/v2/import/execution/cucumber
+
+# Xray Server/DC
+curl -H "Content-Type: application/json" \
+     -X POST \
+     -u username:password \
+     --data @cucumber.json \
+     https://your-jira-instance.com/rest/raven/2.0/import/execution/cucumber
+```
+
+#### Opción 3: Integración en CI/CD
+
+Ejemplo para GitHub Actions:
+
+```yaml
+- name: Upload results to Xray
+  if: always()
+  run: |
+    curl -H "Content-Type: application/json" \
+         -X POST \
+         -H "Authorization: Bearer ${{ secrets.XRAY_TOKEN }}" \
+         --data @src/Hipos.Tests/bin/Debug/net8.0-windows/reports/cucumber.json \
+         https://xray.cloud.getxray.app/api/v2/import/execution/cucumber
+```
+
+### Estructura del Reporte
+
+El archivo `cucumber.json` contiene:
+
+- ✅ **Features y Scenarios** con sus nombres y descripciones
+- 📝 **Steps** con resultados (passed/failed/skipped)
+- ⏱️ **Duración** de cada step en nanosegundos
+- 🏷️ **Tags** de SpecFlow para categorización
+- 📸 **Screenshots** embebidos en base64 (si está habilitado)
+- ❌ **Mensajes de error** para fallos
+
+### Mapeo de Tags para Xray
+
+Usa tags en tus features de SpecFlow para vincular con Xray:
+
+```gherkin
+@CALC-123 @regression
+Feature: Calculadora
+  
+  @CALC-124 @smoke
+  Scenario: Suma básica
+    Given que he ingresado 5 en la calculadora
+    When presiono sumar
+    And ingreso 3
+    And presiono igual
+    Then el resultado debe ser 8
+```
+
+Los tags `@CALC-123` y `@CALC-124` se importarán a Xray y vincularán automáticamente con los Test Cases correspondientes.
+
+### Beneficios de la Integración
+
+- 📊 **Trazabilidad completa** entre requisitos, tests y ejecuciones
+- 🔄 **Sincronización automática** de resultados en cada ejecución
+- 📈 **Métricas y reportes** centralizados en Jira
+- 👥 **Visibilidad** para todo el equipo (QA, Dev, PM)
+- 🎯 **Gestión de test cases** directamente desde Jira
+
 ## 📚 Documentación
 
 ### Portal Docusaurus

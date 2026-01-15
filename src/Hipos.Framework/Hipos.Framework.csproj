@@ -15,6 +15,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="ExtentReports" Version="5.0.4" />
+    <PackageReference Include="SpecFlow" Version="4.0.7-beta" />
   </ItemGroup>
 
 </Project>
