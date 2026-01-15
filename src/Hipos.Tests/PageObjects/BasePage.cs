@@ -6,8 +6,8 @@ using Serilog;
 namespace Hipos.Tests.PageObjects;
 
 /// <summary>
-/// Clase base para todos los Page Objects.
-/// Proporciona funcionalidad común para interactuar con elementos.
+/// Base class for all Page Objects.
+/// Provides common functionality for interacting with elements.
 /// </summary>
 public abstract class BasePage
 {
@@ -21,30 +21,30 @@ public abstract class BasePage
     }
 
     /// <summary>
-    /// Encuentra un elemento por su AutomationId y lo envuelve en un ElementWrapper.
+    /// Finds an element by its AutomationId and wraps it in an ElementWrapper.
     /// </summary>
-    /// <param name="automationId">AutomationId del elemento</param>
-    /// <returns>ElementWrapper del elemento encontrado</returns>
+    /// <param name="automationId">AutomationId of the element</param>
+    /// <returns>ElementWrapper of the found element</returns>
     protected ElementWrapper FindElement(string automationId)
     {
-        Log.Debug("Buscando elemento en página: {AutomationId}", automationId);
+        Log.Debug("Looking for element on page: {AutomationId}", automationId);
 
         var element = WaitHelper.WaitForElement(Window, automationId, DefaultTimeout);
         
         if (element == null)
         {
             throw new InvalidOperationException(
-                $"No se encontró el elemento con AutomationId: {automationId}");
+                $"Element not found with AutomationId: {automationId}");
         }
 
         return new ElementWrapper(element, DefaultTimeout);
     }
 
     /// <summary>
-    /// Verifica si un elemento existe por su AutomationId.
+    /// Verifies if an element exists by its AutomationId.
     /// </summary>
-    /// <param name="automationId">AutomationId del elemento</param>
-    /// <returns>True si existe, false en caso contrario</returns>
+    /// <param name="automationId">AutomationId of the element</param>
+    /// <returns>True if exists, false otherwise</returns>
     protected bool ElementExists(string automationId)
     {
         try
@@ -59,35 +59,35 @@ public abstract class BasePage
     }
 
     /// <summary>
-    /// Espera hasta que un elemento sea visible.
+    /// Waits until an element is visible.
     /// </summary>
-    /// <param name="automationId">AutomationId del elemento</param>
-    /// <param name="timeoutMs">Timeout en milisegundos (opcional)</param>
-    /// <returns>True si el elemento es visible, false si timeout</returns>
+    /// <param name="automationId">AutomationId of the element</param>
+    /// <param name="timeoutMs">Timeout in milliseconds (optional)</param>
+    /// <returns>True if the element is visible, false if timeout</returns>
     protected bool WaitForElementVisible(string automationId, int? timeoutMs = null)
     {
         var timeout = timeoutMs ?? DefaultTimeout;
         return WaitHelper.WaitUntil(
             () => ElementExists(automationId),
             timeout,
-            conditionDescription: $"elemento '{automationId}' visible");
+            conditionDescription: $"element '{automationId}' visible");
     }
 
     /// <summary>
-    /// Trae la ventana al primer plano.
-    /// Útil cuando se necesita asegurar que la ventana esté activa antes de una interacción.
+    /// Brings the window to the foreground.
+    /// Useful when you need to ensure the window is active before an interaction.
     /// </summary>
     protected void EnsureWindowInForeground()
     {
         try
         {
             Window.Focus();
-            Thread.Sleep(300); // Pequeña pausa para que la ventana responda
-            Log.Debug("Ventana traída al frente en Page Object");
+            Thread.Sleep(300); // Small pause for the window to respond
+            Log.Debug("Window brought to foreground in Page Object");
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "No se pudo traer la ventana al frente en Page Object");
+            Log.Warning(ex, "Could not bring window to foreground in Page Object");
         }
     }
 }

@@ -32,18 +32,18 @@ public class TestHooks
                 .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            Log.Information("==== Iniciando suite de tests BDD ====");
+            Log.Information("==== Starting BDD test suite ====");
 
             // Inicializar ExtentReports
             var reportPath = Path.Combine(Directory.GetCurrentDirectory(), "reports", "extent-report.html");
             ExtentReportManager.InitializeReport(reportPath);
 
-            // Inicializar generador de reportes Cucumber JSON
+            // Initialize Cucumber JSON report generator
             var cucumberJsonPath = ConfigManager.Instance.GetValue("Reporting:CucumberJsonPath", "reports/cucumber.json");
             var fullCucumberPath = Path.Combine(Directory.GetCurrentDirectory(), cucumberJsonPath);
             _cucumberReportGenerator = new CucumberJsonReportGenerator();
             _cucumberReportGenerator.Initialize(fullCucumberPath);
-            Log.Information("Generador Cucumber JSON inicializado: {Path}", fullCucumberPath);
+            Log.Information("Cucumber JSON report generator initialized: {Path}", fullCucumberPath);
 
             try
             {
@@ -59,7 +59,7 @@ public class TestHooks
                 StepDefinitions.TestContextHelper.AppLauncher = appLauncher;
                 StepDefinitions.TestContextHelper.MainWindow = mainWindow;
 
-                Log.Information("Aplicación lanzada para suite de tests BDD");
+                Log.Information("Application launched for BDD test suite");
             }
             catch (Exception ex)
             {
@@ -78,30 +78,30 @@ public class TestHooks
         {
             if (!_isInitialized) return;
             
-            Log.Information("==== Finalizando suite de tests BDD ====");
+            Log.Information("==== Finishing BDD test suite ====");
             
-            // Cerrar aplicación UNA SOLA VEZ al final de toda la suite - FORZAR CIERRE COMPLETO
+            // Close application ONLY ONCE at the end of the entire suite - FORCE COMPLETE CLOSURE
             try
             {
                 var appLauncher = StepDefinitions.TestContextHelper.AppLauncher;
                 if (appLauncher != null)
                 {
-                    Log.Information("==== Cerrando aplicación completamente ====");
+                    Log.Information("==== Closing application completely ====");
                     
-                    // Obtener el PID antes de cerrar
+                    // Get PID before closing
                     var application = appLauncher.Application;
                     int? processId = null;
                     if (application != null && !application.HasExited)
                     {
                         processId = application.ProcessId;
-                        Log.Information("Proceso a cerrar - PID: {ProcessId}", processId);
+                        Log.Information("Process to close - PID: {ProcessId}", processId);
                     }
                     
-                    // Método 1: Cerrar normalmente
+                    // Method 1: Close normally
                     appLauncher.CloseApp();
                     Thread.Sleep(1500);
                     
-                    // Método 2: Verificar y forzar cierre usando System.Diagnostics.Process
+                    // Method 2: Verify and force close using System.Diagnostics.Process
                     if (processId.HasValue)
                     {
                         try
@@ -109,7 +109,7 @@ public class TestHooks
                             var process = System.Diagnostics.Process.GetProcessById(processId.Value);
                             if (process != null && !process.HasExited)
                             {
-                                Log.Warning("Proceso aún activo (PID: {ProcessId}), forzando cierre con Kill()...", processId);
+                                Log.Warning("Process still active (PID: {ProcessId}), forcing close with Kill()...", processId);
                                 process.Kill();
                                 if (!process.WaitForExit(3000))
                                 {
@@ -122,13 +122,13 @@ public class TestHooks
                                     catch { }
                                 }
                                 process.Dispose();
-                                Log.Information("Proceso terminado forzosamente");
+                                Log.Information("Process terminated forcefully");
                             }
                         }
                         catch (ArgumentException)
                         {
-                            // Proceso ya no existe, está bien
-                            Log.Information("Proceso ya terminado (PID: {ProcessId})", processId);
+                            // Process no longer exists, that's ok
+                            Log.Information("Process already terminated (PID: {ProcessId})", processId);
                         }
                         catch (Exception procEx)
                         {
@@ -183,7 +183,7 @@ public class TestHooks
                         Log.Warning(nameEx, "Error al buscar procesos por nombre");
                     }
                     
-                    Log.Information("✓ Aplicación cerrada completamente");
+                    Log.Information("✓ Application closed completely");
                 }
             }
             catch (Exception ex)
@@ -202,7 +202,7 @@ public class TestHooks
                         {
                             if (!proc.HasExited)
                             {
-                                Log.Warning("Forzando cierre de proceso residual: PID {ProcessId}", proc.Id);
+                                Log.Warning("Forcing closure of residual process: PID {ProcessId}", proc.Id);
                                 proc.Kill();
                                 proc.WaitForExit(2000);
                             }
@@ -228,15 +228,15 @@ public class TestHooks
                 Log.Warning(ex, "Error al finalizar reporte");
             }
             
-            // Generar reporte Cucumber JSON
+            // Generate Cucumber JSON report
             try
             {
                 _cucumberReportGenerator?.GenerateReport();
-                Log.Information("Reporte Cucumber JSON generado: {ReportPath}", _cucumberReportGenerator?.ReportPath);
+                Log.Information("Cucumber JSON report generated: {ReportPath}", _cucumberReportGenerator?.ReportPath);
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Error al generar reporte Cucumber JSON");
+                Log.Warning(ex, "Error generating Cucumber JSON report");
             }
             
             // Dispose del AppLauncher
@@ -264,16 +264,16 @@ public class TestHooks
         var scenarioTitle = scenarioContext.ScenarioInfo.Title;
         var scenarioDescription = scenarioContext.ScenarioInfo.Description;
         
-        Log.Information("==== Iniciando escenario: {ScenarioTitle} ====", scenarioTitle);
+        Log.Information("==== Starting scenario: {ScenarioTitle} ====", scenarioTitle);
         
-        // Registrar escenario en Cucumber JSON
+        // Register scenario in Cucumber JSON
         try
         {
             _cucumberReportGenerator?.StartScenario(scenarioContext.ScenarioInfo, featureContext.FeatureInfo);
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error al registrar escenario en Cucumber JSON");
+            Log.Warning(ex, "Error registering scenario in Cucumber JSON");
         }
         
         // Asegurar que la ventana esté SIEMPRE en primer plano antes de cada escenario
@@ -291,7 +291,7 @@ public class TestHooks
                 Thread.Sleep(300);
                 appLauncher.EnsureWindowIsInForeground();
                 
-                Log.Information("✓ Ventana asegurada en primer plano para escenario: {ScenarioTitle}", scenarioTitle);
+                Log.Information("✓ Window ensured in foreground for scenario: {ScenarioTitle}", scenarioTitle);
             }
             else
             {
@@ -327,7 +327,7 @@ public class TestHooks
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error al registrar inicio de step en Cucumber JSON");
+            Log.Warning(ex, "Error registering step start in Cucumber JSON");
         }
     }
 
@@ -342,7 +342,7 @@ public class TestHooks
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error al registrar fin de step en Cucumber JSON");
+            Log.Warning(ex, "Error registering step finish in Cucumber JSON");
         }
     }
 
@@ -352,18 +352,18 @@ public class TestHooks
         var scenarioTitle = scenarioContext.Get<string>("ScenarioTitle") ?? "Unknown";
         var testStatus = scenarioContext.ScenarioExecutionStatus;
         
-        Log.Information("Escenario {ScenarioTitle} finalizado con estado: {Status}", scenarioTitle, testStatus);
+        Log.Information("Scenario {ScenarioTitle} finished with status: {Status}", scenarioTitle, testStatus);
         
         string? screenshotPath = null;
         
         try
         {
-            // Si el escenario falló, tomar screenshot y adjuntarlo
+            // If scenario failed, take screenshot and attach it
             if (testStatus == ScenarioExecutionStatus.TestError || 
                 testStatus == ScenarioExecutionStatus.BindingError ||
                 testStatus == ScenarioExecutionStatus.UndefinedStep)
             {
-                Log.Warning("Escenario falló, capturando screenshot");
+                Log.Warning("Scenario failed, capturing screenshot");
                 screenshotPath = ScreenshotHelper.TakeScreenshot(scenarioTitle);
                 
                 if (!string.IsNullOrEmpty(screenshotPath) && File.Exists(screenshotPath))
@@ -380,7 +380,7 @@ public class TestHooks
             }
             else if (testStatus == ScenarioExecutionStatus.OK)
             {
-                ExtentReportManager.LogPass($"Escenario '{scenarioTitle}' completado exitosamente");
+                ExtentReportManager.LogPass($"Scenario '{scenarioTitle}' completed successfully");
             }
             
             // Adjuntar logs del escenario al reporte
@@ -391,7 +391,7 @@ public class TestHooks
             Log.Error(ex, "Error al capturar evidencias en AfterScenario");
         }
         
-        // Finalizar escenario en Cucumber JSON
+        // Finish scenario in Cucumber JSON
         try
         {
             var includeScreenshots = ConfigManager.Instance.GetValue("Reporting:IncludeScreenshots", "true") == "true";
@@ -400,10 +400,10 @@ public class TestHooks
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error al finalizar escenario en Cucumber JSON");
+            Log.Warning(ex, "Error finishing scenario in Cucumber JSON");
         }
         
-        Log.Information("==== Escenario finalizado: {ScenarioTitle} ====\n", scenarioTitle);
+        Log.Information("==== Scenario finished: {ScenarioTitle} ====\n", scenarioTitle);
     }
 
     /// <summary>

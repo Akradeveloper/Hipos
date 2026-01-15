@@ -20,16 +20,16 @@ namespace Hipos.Tests.Features
     [System.CodeDom.Compiler.GeneratedCodeAttribute("TechTalk.SpecFlow", "4.0.0.0")]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [NUnit.Framework.TestFixtureAttribute()]
-    [NUnit.Framework.DescriptionAttribute("Calculadora de Windows")]
-    [NUnit.Framework.CategoryAttribute("Calculadora")]
+    [NUnit.Framework.DescriptionAttribute("Windows Calculator")]
+    [NUnit.Framework.CategoryAttribute("Calculator")]
     [NUnit.Framework.CategoryAttribute("Demo")]
-    public partial class CalculadoraDeWindowsFeature
+    public partial class WindowsCalculatorFeature
     {
         
         private TechTalk.SpecFlow.ITestRunner testRunner;
         
         private static string[] featureTags = new string[] {
-                "Calculadora",
+                "Calculator",
                 "Demo"};
         
 #line 1 "Calculadora.feature"
@@ -39,8 +39,8 @@ namespace Hipos.Tests.Features
         public virtual async System.Threading.Tasks.Task FeatureSetupAsync()
         {
             testRunner = TechTalk.SpecFlow.TestRunnerManager.GetTestRunnerForAssembly(null, NUnit.Framework.TestContext.CurrentContext.WorkerId);
-            TechTalk.SpecFlow.FeatureInfo featureInfo = new TechTalk.SpecFlow.FeatureInfo(new System.Globalization.CultureInfo("es"), "Features", "Calculadora de Windows", "  Como usuario\r\n  Quiero usar la Calculadora de Windows\r\n  Para realizar operacio" +
-                    "nes matemáticas", ProgrammingLanguage.CSharp, featureTags);
+            TechTalk.SpecFlow.FeatureInfo featureInfo = new TechTalk.SpecFlow.FeatureInfo(new System.Globalization.CultureInfo("en"), "Features", "Windows Calculator", "  As a user\r\n  I want to use the Windows Calculator\r\n  To perform mathematical op" +
+                    "erations", ProgrammingLanguage.CSharp, featureTags);
             await testRunner.OnFeatureStartAsync(featureInfo);
         }
         
@@ -79,15 +79,15 @@ namespace Hipos.Tests.Features
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Verificar que la Calculadora se abra correctamente")]
+        [NUnit.Framework.DescriptionAttribute("Verify that the Calculator opens correctly")]
         [NUnit.Framework.CategoryAttribute("Smoke")]
-        public async System.Threading.Tasks.Task VerificarQueLaCalculadoraSeAbraCorrectamente()
+        public async System.Threading.Tasks.Task VerifyThatTheCalculatorOpensCorrectly()
         {
             string[] tagsOfScenario = new string[] {
                     "Smoke"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verificar que la Calculadora se abra correctamente", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 9
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verify that the Calculator opens correctly", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 8
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -97,27 +97,27 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 9
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 10
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I verify the window title", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 11
-    await testRunner.WhenAsync("verifico el título de la ventana", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
-#line hidden
-#line 12
-    await testRunner.ThenAsync("el título debería contener \"Calculadora\" o \"Calculator\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the title should contain \"Calculadora\" or \"Calculator\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Verificar que la ventana de la Calculadora sea visible y accesible")]
-        public async System.Threading.Tasks.Task VerificarQueLaVentanaDeLaCalculadoraSeaVisibleYAccesible()
+        [NUnit.Framework.DescriptionAttribute("Verify that the Calculator window is visible and accessible")]
+        public async System.Threading.Tasks.Task VerifyThatTheCalculatorWindowIsVisibleAndAccessible()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verificar que la ventana de la Calculadora sea visible y accesible", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 14
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verify that the Calculator window is visible and accessible", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 13
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -127,27 +127,27 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 14
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 15
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I verify the window visibility", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 16
-    await testRunner.WhenAsync("verifico la visibilidad de la ventana", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
-#line hidden
-#line 17
-    await testRunner.ThenAsync("la ventana debería estar visible y habilitada", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the window should be visible and enabled", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Verificar que la interfaz de la Calculadora tenga elementos interactivos")]
-        public async System.Threading.Tasks.Task VerificarQueLaInterfazDeLaCalculadoraTengaElementosInteractivos()
+        [NUnit.Framework.DescriptionAttribute("Verify that the Calculator interface has interactive elements")]
+        public async System.Threading.Tasks.Task VerifyThatTheCalculatorInterfaceHasInteractiveElements()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verificar que la interfaz de la Calculadora tenga elementos interactivos", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 19
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verify that the Calculator interface has interactive elements", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 18
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -157,27 +157,27 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 19
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 20
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I verify the interface elements", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 21
-    await testRunner.WhenAsync("verifico los elementos de la interfaz", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
-#line hidden
-#line 22
-    await testRunner.ThenAsync("debería haber elementos de UI disponibles", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("there should be available UI elements", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Mostrar información sobre la ventana de la Calculadora")]
-        public async System.Threading.Tasks.Task MostrarInformacionSobreLaVentanaDeLaCalculadora()
+        [NUnit.Framework.DescriptionAttribute("Display information about the Calculator window")]
+        public async System.Threading.Tasks.Task DisplayInformationAboutTheCalculatorWindow()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Mostrar información sobre la ventana de la Calculadora", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 24
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Display information about the Calculator window", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 23
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -187,29 +187,29 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 24
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 25
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I get the window information", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 26
-    await testRunner.WhenAsync("obtengo la información de la ventana", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
-#line hidden
-#line 27
-    await testRunner.ThenAsync("debería mostrar el título, clase, process ID y dimensiones", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("it should display the title, class, process ID and dimensions", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Realizar una suma simple")]
+        [NUnit.Framework.DescriptionAttribute("Perform a simple addition")]
         [NUnit.Framework.CategoryAttribute("Complex")]
-        public async System.Threading.Tasks.Task RealizarUnaSumaSimple()
+        public async System.Threading.Tasks.Task PerformASimpleAddition()
         {
             string[] tagsOfScenario = new string[] {
                     "Complex"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Realizar una suma simple", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 30
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Perform a simple addition", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 29
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -219,32 +219,32 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 30
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 31
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I clear the calculator", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 32
-    await testRunner.WhenAsync("limpio la calculadora", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I perform the operation \"2 + 3\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 33
-    await testRunner.AndAsync("realizo la operación \"2 + 3\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
-#line hidden
-#line 34
-    await testRunner.ThenAsync("el resultado debería ser \"5\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the result should be \"5\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Realizar una resta")]
+        [NUnit.Framework.DescriptionAttribute("Perform a subtraction")]
         [NUnit.Framework.CategoryAttribute("Complex")]
-        public async System.Threading.Tasks.Task RealizarUnaResta()
+        public async System.Threading.Tasks.Task PerformASubtraction()
         {
             string[] tagsOfScenario = new string[] {
                     "Complex"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Realizar una resta", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 37
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Perform a subtraction", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 36
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -254,32 +254,32 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 37
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 38
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I clear the calculator", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 39
-    await testRunner.WhenAsync("limpio la calculadora", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I perform the operation \"10 - 4\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 40
-    await testRunner.AndAsync("realizo la operación \"10 - 4\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
-#line hidden
-#line 41
-    await testRunner.ThenAsync("el resultado debería ser \"6\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the result should be \"6\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Realizar una multiplicación")]
+        [NUnit.Framework.DescriptionAttribute("Perform a multiplication")]
         [NUnit.Framework.CategoryAttribute("Complex")]
-        public async System.Threading.Tasks.Task RealizarUnaMultiplicacion()
+        public async System.Threading.Tasks.Task PerformAMultiplication()
         {
             string[] tagsOfScenario = new string[] {
                     "Complex"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Realizar una multiplicación", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 44
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Perform a multiplication", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 43
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -289,32 +289,32 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 44
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 45
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I clear the calculator", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 46
-    await testRunner.WhenAsync("limpio la calculadora", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I perform the operation \"7 * 8\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 47
-    await testRunner.AndAsync("realizo la operación \"7 * 8\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
-#line hidden
-#line 48
-    await testRunner.ThenAsync("el resultado debería ser \"56\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the result should be \"56\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Realizar una división")]
+        [NUnit.Framework.DescriptionAttribute("Perform a division")]
         [NUnit.Framework.CategoryAttribute("Complex")]
-        public async System.Threading.Tasks.Task RealizarUnaDivision()
+        public async System.Threading.Tasks.Task PerformADivision()
         {
             string[] tagsOfScenario = new string[] {
                     "Complex"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Realizar una división", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 51
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Perform a division", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 50
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -324,32 +324,32 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 51
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 52
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I clear the calculator", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 53
-    await testRunner.WhenAsync("limpio la calculadora", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I perform the operation \"20 / 4\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 54
-    await testRunner.AndAsync("realizo la operación \"20 / 4\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
-#line hidden
-#line 55
-    await testRunner.ThenAsync("el resultado debería ser \"5\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the result should be \"5\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Realizar operaciones secuenciales")]
+        [NUnit.Framework.DescriptionAttribute("Perform sequential operations")]
         [NUnit.Framework.CategoryAttribute("Complex")]
-        public async System.Threading.Tasks.Task RealizarOperacionesSecuenciales()
+        public async System.Threading.Tasks.Task PerformSequentialOperations()
         {
             string[] tagsOfScenario = new string[] {
                     "Complex"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Realizar operaciones secuenciales", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 58
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Perform sequential operations", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 57
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -359,53 +359,53 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 58
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 59
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I clear the calculator", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 60
-    await testRunner.WhenAsync("limpio la calculadora", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I enter the number \"5\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 61
-    await testRunner.AndAsync("ingreso el número \"5\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
+    await testRunner.AndAsync("I press the add button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 62
-    await testRunner.AndAsync("presiono el botón de suma", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
+    await testRunner.AndAsync("I enter the number \"3\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 63
-    await testRunner.AndAsync("ingreso el número \"3\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
+    await testRunner.AndAsync("I press the equals button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 64
-    await testRunner.AndAsync("presiono el botón igual", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
+    await testRunner.ThenAsync("the intermediate result should be \"8\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
 #line 65
-    await testRunner.ThenAsync("el resultado intermedio debería ser \"8\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.WhenAsync("I press the multiply button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 66
-    await testRunner.WhenAsync("presiono el botón de multiplicación", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I enter the number \"2\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 67
-    await testRunner.AndAsync("ingreso el número \"2\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
+    await testRunner.AndAsync("I press the equals button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 68
-    await testRunner.AndAsync("presiono el botón igual", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
-#line hidden
-#line 69
-    await testRunner.ThenAsync("el resultado final debería ser \"16\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the final result should be \"16\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Verificar que todos los botones numéricos estén disponibles")]
+        [NUnit.Framework.DescriptionAttribute("Verify that all numeric buttons are available")]
         [NUnit.Framework.CategoryAttribute("Complex")]
-        public async System.Threading.Tasks.Task VerificarQueTodosLosBotonesNumericosEstenDisponibles()
+        public async System.Threading.Tasks.Task VerifyThatAllNumericButtonsAreAvailable()
         {
             string[] tagsOfScenario = new string[] {
                     "Complex"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verificar que todos los botones numéricos estén disponibles", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 72
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verify that all numeric buttons are available", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 71
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -415,29 +415,29 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 72
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 73
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I verify the availability of numeric buttons from 0 to 9", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 74
-    await testRunner.WhenAsync("verifico la disponibilidad de los botones numéricos del 0 al 9", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
-#line hidden
-#line 75
-    await testRunner.ThenAsync("todos los botones numéricos deberían estar disponibles", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("all numeric buttons should be available", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Verificar que el botón Clear limpia correctamente el display")]
+        [NUnit.Framework.DescriptionAttribute("Verify that the Clear button clears the display correctly")]
         [NUnit.Framework.CategoryAttribute("Complex")]
-        public async System.Threading.Tasks.Task VerificarQueElBotonClearLimpiaCorrectamenteElDisplay()
+        public async System.Threading.Tasks.Task VerifyThatTheClearButtonClearsTheDisplayCorrectly()
         {
             string[] tagsOfScenario = new string[] {
                     "Complex"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verificar que el botón Clear limpia correctamente el display", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 78
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Verify that the Clear button clears the display correctly", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 77
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -447,29 +447,29 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
+#line 78
+    await testRunner.GivenAsync("the calculator is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line hidden
 #line 79
-    await testRunner.GivenAsync("que la calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Dado ");
+    await testRunner.WhenAsync("I clear the calculator", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 80
-    await testRunner.WhenAsync("limpio la calculadora", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I enter the numbers \"123\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 81
-    await testRunner.AndAsync("ingreso los números \"123\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
+    await testRunner.AndAsync("I verify the display value", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 82
-    await testRunner.AndAsync("verifico el valor del display", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
+    await testRunner.ThenAsync("the display should contain \"123\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
 #line 83
-    await testRunner.ThenAsync("el display debería contener \"123\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.WhenAsync("I press the Clear button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 84
-    await testRunner.WhenAsync("presiono el botón Clear", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Cuando ");
+    await testRunner.AndAsync("I verify the display value", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 85
-    await testRunner.AndAsync("verifico el valor del display", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Y ");
-#line hidden
-#line 86
-    await testRunner.ThenAsync("el display debería mostrar \"0\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Entonces ");
+    await testRunner.ThenAsync("the display should show \"0\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

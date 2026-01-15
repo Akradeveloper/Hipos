@@ -7,10 +7,10 @@ using Serilog;
 namespace Hipos.Tests.StepDefinitions;
 
 /// <summary>
-/// Step definitions para los escenarios de la Calculadora.
+/// Step definitions for Calculator scenarios.
 /// </summary>
 [Binding]
-public class CalculadoraStepDefinitions : BaseStepDefinitions
+public class CalculatorStepDefinitions : BaseStepDefinitions
 {
     private CalculatorPage? _calculatorPage;
     private string? _displayValue;
@@ -18,150 +18,150 @@ public class CalculadoraStepDefinitions : BaseStepDefinitions
     private string? _finalResult;
     private List<int>? _missingButtons;
 
-    [Given("que la calculadora está abierta")]
-    public void GivenQueLaCalculadoraEstaAbierta()
+    [Given("the calculator is open")]
+    public void GivenTheCalculatorIsOpen()
     {
-        LogInfo("Verificando que la calculadora está abierta");
+        LogInfo("Verifying that the calculator is open");
         
-        Assert.That(MainWindow, Is.Not.Null, "La ventana de la Calculadora debería estar disponible");
+        Assert.That(MainWindow, Is.Not.Null, "Calculator window should be available");
         
-        // Asegurar que la ventana esté en primer plano
+        // Ensure window is in foreground
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(200);
         
         _calculatorPage = new CalculatorPage(MainWindow!);
-        LogPass("Calculadora abierta y lista para usar");
+        LogPass("Calculator opened and ready to use");
     }
 
-    [When("verifico el título de la ventana")]
-    public void WhenVerificoElTituloDeLaVentana()
+    [When("I verify the window title")]
+    public void WhenIVerifyTheWindowTitle()
     {
-        LogInfo("Verificando el título de la ventana");
+        LogInfo("Verifying window title");
     }
 
-    [Then("el título debería contener \"(.*)\" o \"(.*)\"")]
-    public void ThenElTituloDeberiaContenerO(string opcion1, string opcion2)
+    [Then("the title should contain \"(.*)\" or \"(.*)\"")]
+    public void ThenTheTitleShouldContainOr(string option1, string option2)
     {
-        Assert.That(MainWindow, Is.Not.Null, "La ventana debería existir");
-        Assert.That(MainWindow!.Title, Does.Contain(opcion1).Or.Contains(opcion2),
-            $"El título debería contener '{opcion1}' o '{opcion2}'");
+        Assert.That(MainWindow, Is.Not.Null, "Window should exist");
+        Assert.That(MainWindow!.Title, Does.Contain(option1).Or.Contains(option2),
+            $"Title should contain '{option1}' or '{option2}'");
         
-        LogPass($"Título verificado: {MainWindow.Title}");
+        LogPass($"Title verified: {MainWindow.Title}");
     }
 
-    [When("verifico la visibilidad de la ventana")]
-    public void WhenVerificoLaVisibilidadDeLaVentana()
+    [When("I verify the window visibility")]
+    public void WhenIVerifyTheWindowVisibility()
     {
-        LogInfo("Verificando visibilidad de la ventana");
+        LogInfo("Verifying window visibility");
     }
 
-    [Then("la ventana debería estar visible y habilitada")]
-    public void ThenLaVentanaDeberiaEstarVisibleYHabilitada()
+    [Then("the window should be visible and enabled")]
+    public void ThenTheWindowShouldBeVisibleAndEnabled()
     {
-        Assert.That(MainWindow, Is.Not.Null, "La ventana debería existir");
-        Assert.That(MainWindow!.IsOffscreen, Is.False, "La ventana no debería estar fuera de pantalla");
-        Assert.That(MainWindow.IsEnabled, Is.True, "La ventana debería estar habilitada");
+        Assert.That(MainWindow, Is.Not.Null, "Window should exist");
+        Assert.That(MainWindow!.IsOffscreen, Is.False, "Window should not be offscreen");
+        Assert.That(MainWindow.IsEnabled, Is.True, "Window should be enabled");
         
-        LogPass("Ventana visible y accesible");
+        LogPass("Window visible and accessible");
     }
 
-    [When("verifico los elementos de la interfaz")]
-    public void WhenVerificoLosElementosDeLaInterfaz()
+    [When("I verify the interface elements")]
+    public void WhenIVerifyTheInterfaceElements()
     {
-        LogInfo("Verificando elementos de UI");
+        LogInfo("Verifying UI elements");
     }
 
-    [Then("debería haber elementos de UI disponibles")]
-    public void EntoncesDeberiaHaberElementosDeUIDisponibles()
+    [Then("there should be available UI elements")]
+    public void ThenThereShouldBeAvailableUIElements()
     {
         var children = MainWindow!.FindAllChildren();
         var childCount = children.Length;
         
-        LogInfo($"Elementos UI encontrados: {childCount}");
+        LogInfo($"UI elements found: {childCount}");
         
-        Assert.That(childCount, Is.GreaterThan(0), "La calculadora debería tener elementos de UI");
-        Assert.That(MainWindow.IsEnabled, Is.True, "La ventana debería estar habilitada para interacción");
+        Assert.That(childCount, Is.GreaterThan(0), "Calculator should have UI elements");
+        Assert.That(MainWindow.IsEnabled, Is.True, "Window should be enabled for interaction");
         
-        LogPass($"Calculadora tiene {childCount} elementos de UI");
+        LogPass($"Calculator has {childCount} UI elements");
     }
 
-    [When("obtengo la información de la ventana")]
-    public void WhenObtengoLaInformacionDeLaVentana()
+    [When("I get the window information")]
+    public void WhenIGetTheWindowInformation()
     {
-        LogInfo("Obteniendo información de la ventana");
+        LogInfo("Getting window information");
     }
 
-    [Then("debería mostrar el título, clase, process ID y dimensiones")]
-    public void EntoncesDeberiaMostrarElTituloClaseProcessIDYDimensiones()
+    [Then("it should display the title, class, process ID and dimensions")]
+    public void ThenItShouldDisplayTheTitleClassProcessIDAndDimensions()
     {
         var title = MainWindow!.Title;
         var className = MainWindow.ClassName;
         var processId = MainWindow.Properties.ProcessId;
         var bounds = MainWindow.BoundingRectangle;
         
-        LogInfo($"Título: {title}");
-        LogInfo($"Clase: {className}");
+        LogInfo($"Title: {title}");
+        LogInfo($"Class: {className}");
         LogInfo($"Process ID: {processId}");
-        LogInfo($"Dimensiones: {bounds.Width}x{bounds.Height}");
+        LogInfo($"Dimensions: {bounds.Width}x{bounds.Height}");
         
-        LogPass("Información de la Calculadora capturada correctamente");
+        LogPass("Calculator information captured correctly");
     }
 
-    [When("limpio la calculadora")]
-    public void WhenLimpioLaCalculadora()
+    [When("I clear the calculator")]
+    public void WhenIClearTheCalculator()
     {
-        // Asegurar que la ventana esté en primer plano antes de interactuar
+        // Ensure window is in foreground before interacting
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(200);
         
-        LogInfo("Limpiando la calculadora");
+        LogInfo("Clearing the calculator");
         _calculatorPage!.ClickClear();
         Thread.Sleep(200);
     }
 
-    [When("realizo la operación \"(.*)\"")]
-    public void WhenRealizoLaOperacion(string operacion)
+    [When("I perform the operation \"(.*)\"")]
+    public void WhenIPerformTheOperation(string operation)
     {
-        // Asegurar que la ventana esté en primer plano antes de interactuar
+        // Ensure window is in foreground before interacting
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(300);
         
-        // Parsear la operación: "2 + 3", "10 - 4", etc.
-        var parts = operacion.Split(' ');
+        // Parse operation: "2 + 3", "10 - 4", etc.
+        var parts = operation.Split(' ');
         if (parts.Length != 3)
         {
-            throw new ArgumentException($"Formato de operación inválido: {operacion}");
+            throw new ArgumentException($"Invalid operation format: {operation}");
         }
         
         var num1 = int.Parse(parts[0]);
-        var operador = parts[1];
+        var operatorSymbol = parts[1];
         var num2 = int.Parse(parts[2]);
         
-        LogInfo($"Realizando operación: {num1} {operador} {num2}");
-        _calculatorPage!.PerformOperation(num1, operador, num2);
+        LogInfo($"Performing operation: {num1} {operatorSymbol} {num2}");
+        _calculatorPage!.PerformOperation(num1, operatorSymbol, num2);
         
-        // Esperar más tiempo para que la calculadora procese y muestre el resultado
+        // Wait longer for calculator to process and display result
         Thread.Sleep(1000);
         
-        // Asegurar nuevamente que la ventana esté en primer plano antes de leer el resultado
+        // Ensure window is in foreground again before reading result
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(200);
     }
 
-    [Then("el resultado debería ser \"(.*)\"")]
-    public void ThenElResultadoDeberiaSer(string resultadoEsperado)
+    [Then("the result should be \"(.*)\"")]
+    public void ThenTheResultShouldBe(string expectedResult)
     {
-        // Asegurar que la ventana esté en primer plano antes de leer
+        // Ensure window is in foreground before reading
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(200);
         
-        // Intentar leer el display varias veces con esperas
+        // Try to read display multiple times with waits
         _displayValue = null;
         for (int i = 0; i < 3; i++)
         {
             _displayValue = _calculatorPage!.GetDisplayValue();
             
-            // Extraer número del texto si contiene "La pantalla muestra X"
+            // Extract number from text if it contains "La pantalla muestra X" or "Display is X"
             if (!string.IsNullOrEmpty(_displayValue))
             {
                 var numberMatch = System.Text.RegularExpressions.Regex.Match(_displayValue, @"\d+");
@@ -170,7 +170,7 @@ public class CalculadoraStepDefinitions : BaseStepDefinitions
                     _displayValue = numberMatch.Value;
                 }
                 
-                if (_displayValue.Contains(resultadoEsperado))
+                if (_displayValue.Contains(expectedResult))
                 {
                     break;
                 }
@@ -178,67 +178,67 @@ public class CalculadoraStepDefinitions : BaseStepDefinitions
             Thread.Sleep(300);
         }
         
-        LogInfo($"Resultado obtenido: {_displayValue}");
+        LogInfo($"Result obtained: {_displayValue}");
         
-        Assert.That(_displayValue, Is.Not.Null, "No se pudo obtener el valor del display");
-        Assert.That(_displayValue, Does.Contain(resultadoEsperado),
-            $"El resultado debería contener '{resultadoEsperado}', pero se obtuvo: '{_displayValue}'");
+        Assert.That(_displayValue, Is.Not.Null, "Could not get display value");
+        Assert.That(_displayValue, Does.Contain(expectedResult),
+            $"Result should contain '{expectedResult}', but got: '{_displayValue}'");
         
-        LogPass($"Operación correcta: resultado = {resultadoEsperado}");
+        LogPass($"Correct operation: result = {expectedResult}");
     }
 
-    [When("ingreso el número \"(.*)\"")]
-    public void WhenIngresoElNumero(string numero)
+    [When("I enter the number \"(.*)\"")]
+    public void WhenIEnterTheNumber(string number)
     {
-        // Asegurar que la ventana esté en primer plano
+        // Ensure window is in foreground
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(100);
         
-        var num = int.Parse(numero);
-        LogInfo($"Ingresando número: {num}");
+        var num = int.Parse(number);
+        LogInfo($"Entering number: {num}");
         _calculatorPage!.ClickNumber(num);
     }
 
-    [When("presiono el botón de suma")]
-    public void WhenPresionoElBotonDeSuma()
+    [When("I press the add button")]
+    public void WhenIPressTheAddButton()
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(100);
         
-        LogInfo("Presionando botón de suma");
+        LogInfo("Pressing add button");
         _calculatorPage!.ClickPlus();
     }
 
-    [When("presiono el botón de multiplicación")]
-    public void WhenPresionoElBotonDeMultiplicacion()
+    [When("I press the multiply button")]
+    public void WhenIPressTheMultiplyButton()
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(100);
         
-        LogInfo("Presionando botón de multiplicación");
+        LogInfo("Pressing multiply button");
         _calculatorPage!.ClickMultiply();
     }
 
-    [When("presiono el botón igual")]
-    public void WhenPresionoElBotonIgual()
+    [When("I press the equals button")]
+    public void WhenIPressTheEqualsButton()
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(100);
         
-        LogInfo("Presionando botón igual");
+        LogInfo("Pressing equals button");
         _calculatorPage!.ClickEquals();
-        Thread.Sleep(800); // Esperar a que se calcule el resultado
+        Thread.Sleep(800); // Wait for result calculation
     }
 
-    [Then("el resultado intermedio debería ser \"(.*)\"")]
-    public void ThenElResultadoIntermedioDeberiaSer(string resultadoEsperado)
+    [Then("the intermediate result should be \"(.*)\"")]
+    public void ThenTheIntermediateResultShouldBe(string expectedResult)
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(200);
         
         _intermediateResult = _calculatorPage!.GetDisplayValue();
         
-        // Extraer número del texto si es necesario
+        // Extract number from text if necessary
         if (!string.IsNullOrEmpty(_intermediateResult))
         {
             var numberMatch = System.Text.RegularExpressions.Regex.Match(_intermediateResult, @"\d+");
@@ -248,23 +248,23 @@ public class CalculadoraStepDefinitions : BaseStepDefinitions
             }
         }
         
-        LogInfo($"Resultado intermedio obtenido: {_intermediateResult}");
+        LogInfo($"Intermediate result obtained: {_intermediateResult}");
         
-        Assert.That(_intermediateResult, Does.Contain(resultadoEsperado),
-            $"El resultado intermedio debería contener '{resultadoEsperado}', pero se obtuvo: '{_intermediateResult}'");
+        Assert.That(_intermediateResult, Does.Contain(expectedResult),
+            $"Intermediate result should contain '{expectedResult}', but got: '{_intermediateResult}'");
         
-        LogPass($"Resultado intermedio correcto: {resultadoEsperado}");
+        LogPass($"Correct intermediate result: {expectedResult}");
     }
 
-    [Then("el resultado final debería ser \"(.*)\"")]
-    public void ThenElResultadoFinalDeberiaSer(string resultadoEsperado)
+    [Then("the final result should be \"(.*)\"")]
+    public void ThenTheFinalResultShouldBe(string expectedResult)
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(200);
         
         _finalResult = _calculatorPage!.GetDisplayValue();
         
-        // Extraer número del texto si es necesario
+        // Extract number from text if necessary
         if (!string.IsNullOrEmpty(_finalResult))
         {
             var numberMatch = System.Text.RegularExpressions.Regex.Match(_finalResult, @"\d+");
@@ -274,59 +274,59 @@ public class CalculadoraStepDefinitions : BaseStepDefinitions
             }
         }
         
-        LogInfo($"Resultado final obtenido: {_finalResult}");
+        LogInfo($"Final result obtained: {_finalResult}");
         
-        Assert.That(_finalResult, Does.Contain(resultadoEsperado),
-            $"El resultado final debería contener '{resultadoEsperado}', pero se obtuvo: '{_finalResult}'");
+        Assert.That(_finalResult, Does.Contain(expectedResult),
+            $"Final result should contain '{expectedResult}', but got: '{_finalResult}'");
         
-        LogPass($"Resultado final correcto: {resultadoEsperado}");
+        LogPass($"Correct final result: {expectedResult}");
     }
 
-    [When("verifico la disponibilidad de los botones numéricos del (\\d+) al (\\d+)")]
-    public void WhenVerificoLaDisponibilidadDeLosBotonesNumericosDelAl(int desde, int hasta)
+    [When("I verify the availability of numeric buttons from (\\d+) to (\\d+)")]
+    public void WhenIVerifyTheAvailabilityOfNumericButtonsFromTo(int from, int to)
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(200);
         
-        LogInfo($"Verificando disponibilidad de botones numéricos del {desde} al {hasta}");
+        LogInfo($"Verifying availability of numeric buttons from {from} to {to}");
         _missingButtons = new List<int>();
         
-        for (int i = desde; i <= hasta; i++)
+        for (int i = from; i <= to; i++)
         {
             try
             {
                 _calculatorPage!.ClickNumber(i);
-                Log.Debug("✓ Botón {Number} disponible", i);
+                Log.Debug("✓ Button {Number} available", i);
             }
             catch (Exception ex)
             {
-                LogWarning($"Botón {i} no disponible: {ex.Message}");
+                LogWarning($"Button {i} not available: {ex.Message}");
                 _missingButtons.Add(i);
             }
         }
         
-        // Limpiar después de verificar
+        // Clear after verification
         _calculatorPage!.ClickClear();
     }
 
-    [Then("todos los botones numéricos deberían estar disponibles")]
-    public void EntoncesTodosLosBotonesNumericosDeberianEstarDisponibles()
+    [Then("all numeric buttons should be available")]
+    public void ThenAllNumericButtonsShouldBeAvailable()
     {
-        Assert.That(_missingButtons, Is.Not.Null, "La verificación de botones debería haberse ejecutado");
+        Assert.That(_missingButtons, Is.Not.Null, "Button verification should have been executed");
         Assert.That(_missingButtons!, Is.Empty,
-            $"Los siguientes botones no están disponibles: {string.Join(", ", _missingButtons)}");
+            $"The following buttons are not available: {string.Join(", ", _missingButtons)}");
         
-        LogPass("Todos los botones numéricos (0-9) están disponibles");
+        LogPass("All numeric buttons (0-9) are available");
     }
 
-    [When("ingreso los números \"(.*)\"")]
-    public void WhenIngresoLosNumeros(string numeros)
+    [When("I enter the numbers \"(.*)\"")]
+    public void WhenIEnterTheNumbers(string numbers)
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(100);
         
-        LogInfo($"Ingresando números: {numeros}");
-        foreach (var digit in numeros)
+        LogInfo($"Entering numbers: {numbers}");
+        foreach (var digit in numbers)
         {
             if (char.IsDigit(digit))
             {
@@ -336,15 +336,15 @@ public class CalculadoraStepDefinitions : BaseStepDefinitions
         Thread.Sleep(300);
     }
 
-    [When("verifico el valor del display")]
-    public void WhenVerificoElValorDelDisplay()
+    [When("I verify the display value")]
+    public void WhenIVerifyTheDisplayValue()
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(100);
         
         _displayValue = _calculatorPage!.GetDisplayValue();
         
-        // Extraer número del texto si es necesario
+        // Extract number from text if necessary
         if (!string.IsNullOrEmpty(_displayValue))
         {
             var numberMatch = System.Text.RegularExpressions.Regex.Match(_displayValue, @"\d+");
@@ -354,37 +354,37 @@ public class CalculadoraStepDefinitions : BaseStepDefinitions
             }
         }
         
-        LogInfo($"Valor del display: {_displayValue}");
+        LogInfo($"Display value: {_displayValue}");
     }
 
-    [Then("el display debería contener \"(.*)\"")]
-    public void ThenElDisplayDeberiaContener(string valorEsperado)
+    [Then("the display should contain \"(.*)\"")]
+    public void ThenTheDisplayShouldContain(string expectedValue)
     {
-        Assert.That(_displayValue, Is.Not.Null, "El valor del display debería haberse obtenido");
-        Assert.That(_displayValue, Does.Contain(valorEsperado),
-            $"El display debería contener '{valorEsperado}', pero muestra: '{_displayValue}'");
+        Assert.That(_displayValue, Is.Not.Null, "Display value should have been obtained");
+        Assert.That(_displayValue, Does.Contain(expectedValue),
+            $"Display should contain '{expectedValue}', but shows: '{_displayValue}'");
         
-        LogPass($"Display contiene '{valorEsperado}'");
+        LogPass($"Display contains '{expectedValue}'");
     }
 
-    [When("presiono el botón Clear")]
-    public void WhenPresionoElBotonClear()
+    [When("I press the Clear button")]
+    public void WhenIPressTheClearButton()
     {
         AppLauncher?.EnsureWindowIsInForeground();
         Thread.Sleep(100);
         
-        LogInfo("Presionando botón Clear");
+        LogInfo("Pressing Clear button");
         _calculatorPage!.ClickClear();
         Thread.Sleep(300);
     }
 
-    [Then("el display debería mostrar \"(.*)\"")]
-    public void ThenElDisplayDeberiaMostrar(string valorEsperado)
+    [Then("the display should show \"(.*)\"")]
+    public void ThenTheDisplayShouldShow(string expectedValue)
     {
-        Assert.That(_displayValue, Is.Not.Null, "El valor del display debería haberse obtenido");
-        Assert.That(_displayValue, Does.Contain(valorEsperado),
-            $"El display debería mostrar '{valorEsperado}', pero muestra: '{_displayValue}'");
+        Assert.That(_displayValue, Is.Not.Null, "Display value should have been obtained");
+        Assert.That(_displayValue, Does.Contain(expectedValue),
+            $"Display should show '{expectedValue}', but shows: '{_displayValue}'");
         
-        LogPass($"Display muestra '{valorEsperado}'");
+        LogPass($"Display shows '{expectedValue}'");
     }
 }

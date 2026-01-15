@@ -6,8 +6,8 @@ using Serilog;
 namespace Hipos.Tests.StepDefinitions;
 
 /// <summary>
-/// Clase base para todas las step definitions.
-/// Proporciona acceso a MainWindow, AppLauncher y utilidades comunes.
+/// Base class for all step definitions.
+/// Provides access to MainWindow, AppLauncher and common utilities.
 /// </summary>
 public abstract class BaseStepDefinitions
 {
@@ -48,7 +48,7 @@ public abstract class BaseStepDefinitions
 }
 
 /// <summary>
-/// Helper estático para compartir el contexto de la aplicación entre hooks y step definitions.
+/// Static helper to share application context between hooks and step definitions.
 /// </summary>
 public static class TestContextHelper
 {

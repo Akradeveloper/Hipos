@@ -6,7 +6,7 @@ using TechTalk.SpecFlow;
 namespace Hipos.Framework.Utils;
 
 /// <summary>
-/// Generador de reportes en formato Cucumber JSON compatible con Jira/Xray.
+/// Generates Cucumber JSON format reports compatible with Jira/Xray.
 /// </summary>
 public class CucumberJsonReportGenerator
 {
@@ -20,9 +20,9 @@ public class CucumberJsonReportGenerator
     private DateTime _stepStartTime;
 
     /// <summary>
-    /// Inicializa el generador de reportes.
+    /// Initializes the report generator.
     /// </summary>
-    /// <param name="reportPath">Ruta donde se guardará el archivo cucumber.json</param>
+    /// <param name="reportPath">Path where the cucumber.json file will be saved</param>
     public void Initialize(string reportPath)
     {
         lock (_lock)
@@ -31,25 +31,25 @@ public class CucumberJsonReportGenerator
             _features.Clear();
             _featureCache.Clear();
             
-            // Crear directorio si no existe
+            // Create directory if it doesn't exist
             var directory = Path.GetDirectoryName(reportPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
             
-            Log.Information("CucumberJsonReportGenerator inicializado: {ReportPath}", reportPath);
+            Log.Information("CucumberJsonReportGenerator initialized: {ReportPath}", reportPath);
         }
     }
 
     /// <summary>
-    /// Registra el inicio de un escenario.
+    /// Registers the start of a scenario.
     /// </summary>
     public void StartScenario(ScenarioInfo scenarioInfo, FeatureInfo featureInfo)
     {
         lock (_lock)
         {
-            // Obtener o crear feature
+            // Get or create feature
             var featureId = GenerateId(featureInfo.Title);
             if (!_featureCache.TryGetValue(featureId, out _currentFeature))
             {
@@ -67,7 +67,7 @@ public class CucumberJsonReportGenerator
                 _featureCache[featureId] = _currentFeature;
             }
 
-            // Crear escenario
+            // Create scenario
             var scenarioId = $"{featureId};{GenerateId(scenarioInfo.Title)}";
             _currentScenario = new CucumberScenario
             {
@@ -83,12 +83,12 @@ public class CucumberJsonReportGenerator
             
             _currentFeature.Elements.Add(_currentScenario);
             
-            Log.Debug("Escenario iniciado: {ScenarioName}", scenarioInfo.Title);
+            Log.Debug("Scenario started: {ScenarioName}", scenarioInfo.Title);
         }
     }
 
     /// <summary>
-    /// Registra el inicio de un step.
+    /// Registers the start of a step.
     /// </summary>
     public void StartStep(StepInfo stepInfo)
     {
@@ -96,7 +96,7 @@ public class CucumberJsonReportGenerator
         {
             if (_currentScenario == null)
             {
-                Log.Warning("No hay escenario activo para registrar step");
+                Log.Warning("No active scenario to register step");
                 return;
             }
 
@@ -110,7 +110,7 @@ public class CucumberJsonReportGenerator
                 Match = new CucumberMatch { Location = "StepDefinition" }
             };
             
-            // Agregar argumentos si existen
+            // Add arguments if they exist
             if (stepInfo.Table != null)
             {
                 _currentStep.Rows = stepInfo.Table.Rows.Select(row => new CucumberRow
@@ -121,12 +121,12 @@ public class CucumberJsonReportGenerator
             
             _currentScenario.Steps.Add(_currentStep);
             
-            Log.Debug("Step iniciado: {StepKeyword} {StepText}", stepInfo.StepDefinitionType, stepInfo.Text);
+            Log.Debug("Step started: {StepKeyword} {StepText}", stepInfo.StepDefinitionType, stepInfo.Text);
         }
     }
 
     /// <summary>
-    /// Registra el resultado de un step.
+    /// Registers the result of a step.
     /// </summary>
     public void FinishStep(ScenarioExecutionStatus status, Exception? error = null)
     {
@@ -134,11 +134,11 @@ public class CucumberJsonReportGenerator
         {
             if (_currentStep == null)
             {
-                Log.Warning("No hay step activo para finalizar");
+                Log.Warning("No active step to finish");
                 return;
             }
 
-            var duration = (long)(DateTime.UtcNow - _stepStartTime).TotalMilliseconds * 1_000_000; // Convertir a nanosegundos
+            var duration = (long)(DateTime.UtcNow - _stepStartTime).TotalMilliseconds * 1_000_000; // Convert to nanoseconds
             
             _currentStep.Result = new CucumberResult
             {
@@ -147,12 +147,12 @@ public class CucumberJsonReportGenerator
                 ErrorMessage = error?.Message
             };
             
-            Log.Debug("Step finalizado: {Status}, Duración: {Duration}ms", _currentStep.Result.Status, duration / 1_000_000);
+            Log.Debug("Step finished: {Status}, Duration: {Duration}ms", _currentStep.Result.Status, duration / 1_000_000);
         }
     }
 
     /// <summary>
-    /// Registra el fin de un escenario.
+    /// Registers the end of a scenario.
     /// </summary>
     public void FinishScenario(ScenarioExecutionStatus status, Exception? error = null, string? screenshotPath = null)
     {
@@ -160,11 +160,11 @@ public class CucumberJsonReportGenerator
         {
             if (_currentScenario == null)
             {
-                Log.Warning("No hay escenario activo para finalizar");
+                Log.Warning("No active scenario to finish");
                 return;
             }
 
-            // Agregar screenshot como after hook si existe
+            // Add screenshot as after hook if exists
             if (!string.IsNullOrEmpty(screenshotPath) && File.Exists(screenshotPath))
             {
                 var screenshotData = Convert.ToBase64String(File.ReadAllBytes(screenshotPath));
@@ -175,7 +175,7 @@ public class CucumberJsonReportGenerator
                     Name = Path.GetFileName(screenshotPath)
                 };
 
-                // Agregar como hook "after"
+                // Add as "after" hook
                 var afterHook = new CucumberHook
                 {
                     Match = new CucumberMatch { Location = "AfterScenario" },
@@ -190,7 +190,7 @@ public class CucumberJsonReportGenerator
                 _currentScenario.After = new[] { afterHook };
             }
 
-            Log.Debug("Escenario finalizado: {ScenarioName}, Status: {Status}", _currentScenario.Name, status);
+            Log.Debug("Scenario finished: {ScenarioName}, Status: {Status}", _currentScenario.Name, status);
             
             _currentScenario = null;
             _currentStep = null;
@@ -198,7 +198,7 @@ public class CucumberJsonReportGenerator
     }
 
     /// <summary>
-    /// Genera el archivo cucumber.json con todos los resultados.
+    /// Generates the cucumber.json file with all results.
     /// </summary>
     public void GenerateReport()
     {
@@ -206,7 +206,7 @@ public class CucumberJsonReportGenerator
         {
             if (string.IsNullOrEmpty(_reportPath))
             {
-                Log.Warning("No se ha configurado la ruta del reporte");
+                Log.Warning("Report path has not been configured");
                 return;
             }
 
@@ -222,21 +222,21 @@ public class CucumberJsonReportGenerator
                 var json = JsonSerializer.Serialize(_features, options);
                 File.WriteAllText(_reportPath, json);
                 
-                Log.Information("Reporte Cucumber JSON generado exitosamente: {ReportPath}", _reportPath);
+                Log.Information("Cucumber JSON report generated successfully: {ReportPath}", _reportPath);
                 Log.Information("Total features: {FeatureCount}, Total scenarios: {ScenarioCount}", 
                     _features.Count, 
                     _features.Sum(f => f.Elements.Count));
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error al generar reporte Cucumber JSON");
+                Log.Error(ex, "Error generating Cucumber JSON report");
                 throw;
             }
         }
     }
 
     /// <summary>
-    /// Mapea el estado de SpecFlow al formato Cucumber.
+    /// Maps SpecFlow status to Cucumber format.
     /// </summary>
     private string MapStatus(ScenarioExecutionStatus status)
     {
@@ -253,7 +253,7 @@ public class CucumberJsonReportGenerator
     }
 
     /// <summary>
-    /// Genera un ID válido a partir de un texto.
+    /// Generates a valid ID from text.
     /// </summary>
     private string GenerateId(string text)
     {
@@ -270,10 +270,10 @@ public class CucumberJsonReportGenerator
     public string? ReportPath => _reportPath;
 }
 
-#region Modelos Cucumber JSON
+#region Cucumber JSON Models
 
 /// <summary>
-/// Representa un Feature en el formato Cucumber JSON.
+/// Represents a Feature in Cucumber JSON format.
 /// </summary>
 public class CucumberFeature
 {
@@ -303,7 +303,7 @@ public class CucumberFeature
 }
 
 /// <summary>
-/// Representa un Scenario en el formato Cucumber JSON.
+/// Represents a Scenario in Cucumber JSON format.
 /// </summary>
 public class CucumberScenario
 {
@@ -339,7 +339,7 @@ public class CucumberScenario
 }
 
 /// <summary>
-/// Representa un Step en el formato Cucumber JSON.
+/// Represents a Step in Cucumber JSON format.
 /// </summary>
 public class CucumberStep
 {
@@ -363,7 +363,7 @@ public class CucumberStep
 }
 
 /// <summary>
-/// Representa el resultado de un Step.
+/// Represents the result of a Step.
 /// </summary>
 public class CucumberResult
 {
@@ -378,7 +378,7 @@ public class CucumberResult
 }
 
 /// <summary>
-/// Representa el match de un Step.
+/// Represents the match of a Step.
 /// </summary>
 public class CucumberMatch
 {
@@ -387,7 +387,7 @@ public class CucumberMatch
 }
 
 /// <summary>
-/// Representa un Tag.
+/// Represents a Tag.
 /// </summary>
 public class CucumberTag
 {
@@ -399,7 +399,7 @@ public class CucumberTag
 }
 
 /// <summary>
-/// Representa una fila de tabla en un Step.
+/// Represents a table row in a Step.
 /// </summary>
 public class CucumberRow
 {
@@ -408,7 +408,7 @@ public class CucumberRow
 }
 
 /// <summary>
-/// Representa un Hook (before/after).
+/// Represents a Hook (before/after).
 /// </summary>
 public class CucumberHook
 {
@@ -423,7 +423,7 @@ public class CucumberHook
 }
 
 /// <summary>
-/// Representa un embedding (screenshot, archivo adjunto).
+/// Represents an embedding (screenshot, attached file).
 /// </summary>
 public class CucumberEmbedding
 {

@@ -1,86 +1,85 @@
-# language: es
-@Calculadora @Demo
-Característica: Calculadora de Windows
-  Como usuario
-  Quiero usar la Calculadora de Windows
-  Para realizar operaciones matemáticas
+@Calculator @Demo
+Feature: Windows Calculator
+  As a user
+  I want to use the Windows Calculator
+  To perform mathematical operations
 
   @Smoke
-  Escenario: Verificar que la Calculadora se abra correctamente
-    Dado que la calculadora está abierta
-    Cuando verifico el título de la ventana
-    Entonces el título debería contener "Calculadora" o "Calculator"
+  Scenario: Verify that the Calculator opens correctly
+    Given the calculator is open
+    When I verify the window title
+    Then the title should contain "Calculadora" or "Calculator"
 
-  Escenario: Verificar que la ventana de la Calculadora sea visible y accesible
-    Dado que la calculadora está abierta
-    Cuando verifico la visibilidad de la ventana
-    Entonces la ventana debería estar visible y habilitada
+  Scenario: Verify that the Calculator window is visible and accessible
+    Given the calculator is open
+    When I verify the window visibility
+    Then the window should be visible and enabled
 
-  Escenario: Verificar que la interfaz de la Calculadora tenga elementos interactivos
-    Dado que la calculadora está abierta
-    Cuando verifico los elementos de la interfaz
-    Entonces debería haber elementos de UI disponibles
+  Scenario: Verify that the Calculator interface has interactive elements
+    Given the calculator is open
+    When I verify the interface elements
+    Then there should be available UI elements
 
-  Escenario: Mostrar información sobre la ventana de la Calculadora
-    Dado que la calculadora está abierta
-    Cuando obtengo la información de la ventana
-    Entonces debería mostrar el título, clase, process ID y dimensiones
-
-  @Complex
-  Escenario: Realizar una suma simple
-    Dado que la calculadora está abierta
-    Cuando limpio la calculadora
-    Y realizo la operación "2 + 3"
-    Entonces el resultado debería ser "5"
+  Scenario: Display information about the Calculator window
+    Given the calculator is open
+    When I get the window information
+    Then it should display the title, class, process ID and dimensions
 
   @Complex
-  Escenario: Realizar una resta
-    Dado que la calculadora está abierta
-    Cuando limpio la calculadora
-    Y realizo la operación "10 - 4"
-    Entonces el resultado debería ser "6"
+  Scenario: Perform a simple addition
+    Given the calculator is open
+    When I clear the calculator
+    And I perform the operation "2 + 3"
+    Then the result should be "5"
 
   @Complex
-  Escenario: Realizar una multiplicación
-    Dado que la calculadora está abierta
-    Cuando limpio la calculadora
-    Y realizo la operación "7 * 8"
-    Entonces el resultado debería ser "56"
+  Scenario: Perform a subtraction
+    Given the calculator is open
+    When I clear the calculator
+    And I perform the operation "10 - 4"
+    Then the result should be "6"
 
   @Complex
-  Escenario: Realizar una división
-    Dado que la calculadora está abierta
-    Cuando limpio la calculadora
-    Y realizo la operación "20 / 4"
-    Entonces el resultado debería ser "5"
+  Scenario: Perform a multiplication
+    Given the calculator is open
+    When I clear the calculator
+    And I perform the operation "7 * 8"
+    Then the result should be "56"
 
   @Complex
-  Escenario: Realizar operaciones secuenciales
-    Dado que la calculadora está abierta
-    Cuando limpio la calculadora
-    Y ingreso el número "5"
-    Y presiono el botón de suma
-    Y ingreso el número "3"
-    Y presiono el botón igual
-    Entonces el resultado intermedio debería ser "8"
-    Cuando presiono el botón de multiplicación
-    Y ingreso el número "2"
-    Y presiono el botón igual
-    Entonces el resultado final debería ser "16"
+  Scenario: Perform a division
+    Given the calculator is open
+    When I clear the calculator
+    And I perform the operation "20 / 4"
+    Then the result should be "5"
 
   @Complex
-  Escenario: Verificar que todos los botones numéricos estén disponibles
-    Dado que la calculadora está abierta
-    Cuando verifico la disponibilidad de los botones numéricos del 0 al 9
-    Entonces todos los botones numéricos deberían estar disponibles
+  Scenario: Perform sequential operations
+    Given the calculator is open
+    When I clear the calculator
+    And I enter the number "5"
+    And I press the add button
+    And I enter the number "3"
+    And I press the equals button
+    Then the intermediate result should be "8"
+    When I press the multiply button
+    And I enter the number "2"
+    And I press the equals button
+    Then the final result should be "16"
 
   @Complex
-  Escenario: Verificar que el botón Clear limpia correctamente el display
-    Dado que la calculadora está abierta
-    Cuando limpio la calculadora
-    Y ingreso los números "123"
-    Y verifico el valor del display
-    Entonces el display debería contener "123"
-    Cuando presiono el botón Clear
-    Y verifico el valor del display
-    Entonces el display debería mostrar "0"
+  Scenario: Verify that all numeric buttons are available
+    Given the calculator is open
+    When I verify the availability of numeric buttons from 0 to 9
+    Then all numeric buttons should be available
+
+  @Complex
+  Scenario: Verify that the Clear button clears the display correctly
+    Given the calculator is open
+    When I clear the calculator
+    And I enter the numbers "123"
+    And I verify the display value
+    Then the display should contain "123"
+    When I press the Clear button
+    And I verify the display value
+    Then the display should show "0"

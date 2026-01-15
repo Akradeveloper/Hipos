@@ -5,28 +5,28 @@ using Serilog;
 namespace Hipos.Tests.PageObjects;
 
 /// <summary>
-/// Page Object para la Calculadora de Windows.
-/// Interactúa con botones numéricos, operadores y display.
+/// Page Object for Windows Calculator.
+/// Interacts with numeric buttons, operators and display.
 /// </summary>
 public class CalculatorPage : BasePage
 {
     public CalculatorPage(Window window) : base(window)
     {
-        Log.Information("Inicializando CalculatorPage para Calculadora de Windows");
+        Log.Information("Initializing CalculatorPage for Windows Calculator");
     }
 
     /// <summary>
-    /// Hace click en un botón numérico (0-9).
+    /// Clicks a numeric button (0-9).
     /// </summary>
     public void ClickNumber(int number)
     {
         if (number < 0 || number > 9)
-            throw new ArgumentException("El número debe estar entre 0 y 9", nameof(number));
+            throw new ArgumentException("Number must be between 0 and 9", nameof(number));
 
-        Log.Information("Haciendo click en número: {Number}", number);
+        Log.Information("Clicking on number: {Number}", number);
         
-        // La calculadora de Windows usa nombres como "Uno", "Dos", etc. en español
-        // o "One", "Two", etc. en inglés
+        // Windows Calculator uses names like "Uno", "Dos", etc. in Spanish
+        // or "One", "Two", etc. in English
         var numberNames = new Dictionary<int, string[]>
         {
             {0, new[] {"Cero", "Zero"}},
@@ -43,84 +43,84 @@ public class CalculatorPage : BasePage
 
         var button = FindButtonByNames(numberNames[number]);
         button?.Click();
-        Thread.Sleep(100); // Pequeña pausa entre clicks
+        Thread.Sleep(100); // Small pause between clicks
     }
 
     /// <summary>
-    /// Hace click en el botón de suma (+).
+    /// Clicks the addition button (+).
     /// </summary>
     public void ClickPlus()
     {
-        Log.Information("Haciendo click en botón Más (+)");
+        Log.Information("Clicking on Plus (+) button");
         var button = FindButtonByNames(new[] {"Más", "Plus", "Sumar", "Add"});
         button?.Click();
         Thread.Sleep(100);
     }
 
     /// <summary>
-    /// Hace click en el botón de resta (-).
+    /// Clicks the subtraction button (-).
     /// </summary>
     public void ClickMinus()
     {
-        Log.Information("Haciendo click en botón Menos (-)");
+        Log.Information("Clicking on Minus (-) button");
         var button = FindButtonByNames(new[] {"Menos", "Minus", "Restar", "Subtract"});
         button?.Click();
         Thread.Sleep(100);
     }
 
     /// <summary>
-    /// Hace click en el botón de multiplicación (*).
+    /// Clicks the multiplication button (*).
     /// </summary>
     public void ClickMultiply()
     {
-        Log.Information("Haciendo click en botón Multiplicar (*)");
+        Log.Information("Clicking on Multiply (*) button");
         var button = FindButtonByNames(new[] {"Multiplicar por", "Multiply by", "Por", "Times"});
         button?.Click();
         Thread.Sleep(100);
     }
 
     /// <summary>
-    /// Hace click en el botón de división (/).
+    /// Clicks the division button (/).
     /// </summary>
     public void ClickDivide()
     {
-        Log.Information("Haciendo click en botón Dividir (/)");
+        Log.Information("Clicking on Divide (/) button");
         var button = FindButtonByNames(new[] {"Dividir por", "Divide by", "Entre", "Divided by"});
         button?.Click();
         Thread.Sleep(100);
     }
 
     /// <summary>
-    /// Hace click en el botón igual (=).
+    /// Clicks the equals button (=).
     /// </summary>
     public void ClickEquals()
     {
-        Log.Information("Haciendo click en botón Igual (=)");
+        Log.Information("Clicking on Equals (=) button");
         var button = FindButtonByNames(new[] {"Es igual a", "Equals", "Igual", "="});
         button?.Click();
-        Thread.Sleep(200); // Esperar a que se calcule el resultado
+        Thread.Sleep(200); // Wait for calculation
     }
 
     /// <summary>
-    /// Hace click en el botón Clear (C).
+    /// Clicks the Clear button (C).
     /// </summary>
     public void ClickClear()
     {
-        Log.Information("Haciendo click en botón Borrar (C)");
+        Log.Information("Clicking on Clear (C) button");
         var button = FindButtonByNames(new[] {"Borrar", "Clear", "Limpiar", "C"});
         button?.Click();
         Thread.Sleep(100);
     }
 
     /// <summary>
-    /// Obtiene el valor actual del display/resultado.
+    /// Gets the current display/result value.
     /// </summary>
     public string GetDisplayValue()
     {
-        Log.Information("Obteniendo valor del display");
+        Log.Information("Getting display value");
         
-        // Buscar el elemento de texto que muestra el resultado
-        // Puede ser un TextBlock o un Text con AutomationId "CalculatorResults"
+        // Search for the text element showing the result
+        // Can be a TextBlock or Text with AutomationId "CalculatorResults"
         try
         {
             var displayElement = Window.FindFirstDescendant(cf => 
@@ -132,16 +132,16 @@ public class CalculatorPage : BasePage
                            displayElement.Name ?? 
                            displayElement.Properties.Name.ValueOrDefault;
                 
-                Log.Information("Valor del display: {Display}", text);
+                Log.Information("Display value: {Display}", text);
                 return text ?? "";
             }
         }
         catch (Exception ex)
         {
-            Log.Warning("No se pudo obtener el display principal: {Error}", ex.Message);
+            Log.Warning("Could not get main display: {Error}", ex.Message);
         }
 
-        // Método alternativo: buscar cualquier Text con el resultado
+        // Alternative method: search for any Text with the result
         try
         {
             var allTexts = Window.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
@@ -151,50 +151,50 @@ public class CalculatorPage : BasePage
                 if (!string.IsNullOrEmpty(text) && text.Contains("is") && 
                     (char.IsDigit(text[0]) || text.StartsWith("Display")))
                 {
-                    Log.Information("Valor del display (alternativo): {Display}", text);
+                    Log.Information("Display value (alternative): {Display}", text);
                     return text;
                 }
             }
         }
         catch (Exception ex)
         {
-            Log.Warning("No se pudo obtener el display alternativo: {Error}", ex.Message);
+            Log.Warning("Could not get alternative display: {Error}", ex.Message);
         }
 
         return "0";
     }
 
     /// <summary>
-    /// Realiza una operación completa: num1 operador num2 = resultado.
+    /// Performs a complete operation: num1 operator num2 = result.
     /// </summary>
     public void PerformOperation(int num1, string operation, int num2)
     {
-        Log.Information("Realizando operación: {Num1} {Op} {Num2}", num1, operation, num2);
+        Log.Information("Performing operation: {Num1} {Op} {Num2}", num1, operation, num2);
         
-        ClickClear(); // Limpiar primero
+        ClickClear(); // Clear first
         
-        // Ingresar primer número
+        // Enter first number
         EnterNumber(num1);
         
-        // Seleccionar operación
+        // Select operation
         switch (operation)
         {
             case "+": ClickPlus(); break;
             case "-": ClickMinus(); break;
             case "*": ClickMultiply(); break;
             case "/": ClickDivide(); break;
-            default: throw new ArgumentException($"Operación no soportada: {operation}");
+            default: throw new ArgumentException($"Unsupported operation: {operation}");
         }
         
-        // Ingresar segundo número
+        // Enter second number
         EnterNumber(num2);
         
-        // Calcular resultado
+        // Calculate result
         ClickEquals();
     }
 
     /// <summary>
-    /// Ingresa un número digit por dígito.
+    /// Enters a number digit by digit.
     /// </summary>
     private void EnterNumber(int number)
     {
@@ -206,7 +206,7 @@ public class CalculatorPage : BasePage
     }
 
     /// <summary>
-    /// Busca un botón por una lista de posibles nombres.
+    /// Searches for a button by a list of possible names.
     /// </summary>
     private AutomationElement? FindButtonByNames(string[] possibleNames)
     {
@@ -219,22 +219,22 @@ public class CalculatorPage : BasePage
                 
                 if (button != null && button.IsAvailable)
                 {
-                    Log.Debug("Botón encontrado: {Name}", name);
+                    Log.Debug("Button found: {Name}", name);
                     return button;
                 }
             }
             catch
             {
-                // Continuar con el siguiente nombre
+                // Continue with next name
             }
         }
         
-        Log.Warning("No se encontró botón con nombres: {Names}", string.Join(", ", possibleNames));
+        Log.Warning("Button not found with names: {Names}", string.Join(", ", possibleNames));
         return null;
     }
 
     /// <summary>
-    /// Verifica si un botón específico está disponible.
+    /// Verifies if a specific button is available.
     /// </summary>
     public bool IsButtonAvailable(string buttonName)
     {
