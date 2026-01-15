@@ -4,171 +4,295 @@ sidebar_position: 5
 
 # Reporting & Logging
 
-Hipos incluye reporting completo con Allure y logging estructurado con Serilog.
+Hipos includes comprehensive reporting with ExtentReports 5 and Cucumber JSON for Jira/Xray integration, plus structured logging with Serilog.
 
-## Allure Reports
+## ExtentReports 5
 
-Allure genera reportes HTML interactivos y profesionales.
+ExtentReports generates beautiful, interactive HTML reports with a modern dark theme.
 
-### Generar Reporte
+### Automatic Generation
+
+Reports are generated automatically after running tests:
 
 ```bash
-# 1. Ejecutar tests (genera allure-results/)
+# 1. Run tests (generates extent-report.html)
 dotnet test
 
-# 2. Generar reporte HTML
-allure generate src/Hipos.Tests/bin/Debug/net8.0-windows/allure-results -o allure-report --clean
-
-# 3. Abrir en navegador
-allure open allure-report
+# 2. Open report in browser (Windows)
+start src\Hipos.Tests\bin\Debug\net8.0-windows\reports\extent-report.html
 ```
 
-### Contenido del Reporte
+### Report Location
 
-El reporte Allure incluye:
+```
+src/Hipos.Tests/bin/Debug/net8.0-windows/reports/extent-report.html
+```
 
-- 📊 **Overview**: Estadísticas generales, gráficas de pasados/fallados
-- 📋 **Suites**: Organización por TestFixture
-- 📈 **Graphs**: Gráficas de severidad, duración, etc.
-- ⏱️ **Timeline**: Línea de tiempo de ejecución
-- 🏷️ **Tags**: Filtrado por categorías y tags
-- 📦 **Packages**: Organización por namespace
-- 📸 **Attachments**: Screenshots, logs, evidencias
+### Report Content
 
-### Anotar Tests con Allure
+The ExtentReports report includes:
 
-#### Suite
+- 📊 **Dashboard**: General statistics with visual charts
+- 📋 **Tests**: Organized by TestFixture and Feature
+- 📈 **Categories**: Filtering by tags (Smoke, Complex, Demo)
+- ⏱️ **Timeline**: Execution time per test
+- 📸 **Screenshots**: Automatic capture on failures
+- 📄 **Logs**: Step-by-step test execution logs
+- 🌙 **Dark Theme**: Better readability
+- 💻 **System Info**: Framework, environment, automation tool details
+
+### Configuration
+
+ExtentReports is initialized in `TestHooks.cs`:
+
 ```csharp
-[AllureSuite("Login Tests")]
-public class LoginTests : BaseTest
+var reportPath = Path.Combine(Directory.GetCurrentDirectory(), "reports", "extent-report.html");
+ExtentReportManager.InitializeReport(reportPath);
+```
+
+### Using ExtentReports in Code
+
+The `ExtentReportManager` provides methods to log test steps:
+
+```csharp
+using Hipos.Framework.Utils;
+
+public class MyStepDefinitions : BaseStepDefinitions
 {
-}
-```
-
-#### Tags
-```csharp
-[Test]
-[AllureTag("smoke", "login", "critical")]
-public void MyTest() { }
-```
-
-#### Severidad
-```csharp
-[Test]
-[AllureSeverity(SeverityLevel.critical)]  // critical, blocker, normal, minor, trivial
-public void MyTest() { }
-```
-
-#### Descripción
-```csharp
-[Test]
-[AllureDescription("Este test verifica que el login funcione correctamente")]
-public void MyTest() { }
-```
-
-#### Steps
-```csharp
-[Test]
-public void MyTest()
-{
-    AllureApi.Step("Paso 1: Navegar a login");
-    // código
-    
-    AllureApi.Step("Paso 2: Ingresar credenciales");
-    // código
-    
-    AllureApi.Step("Paso 3: Verificar dashboard");
-    // código
-}
-```
-
-#### Adjuntar Evidencia
-
-```csharp
-// Screenshot
-var screenshotPath = "path/to/screenshot.png";
-AllureApi.AddAttachment(
-    name: "Screenshot Error",
-    type: "image/png",
-    content: File.ReadAllBytes(screenshotPath),
-    fileExtension: ".png"
-);
-
-// Texto
-AllureApi.AddAttachment(
-    name: "Response Body",
-    type: "text/plain",
-    content: Encoding.UTF8.GetBytes(responseText),
-    fileExtension: ".txt"
-);
-
-// JSON
-AllureApi.AddAttachment(
-    name: "API Response",
-    type: "application/json",
-    content: Encoding.UTF8.GetBytes(jsonString),
-    fileExtension: ".json"
-);
-```
-
-### Screenshots Automáticos
-
-`BaseTest` captura screenshots automáticamente cuando un test falla:
-
-1. Test falla con excepción
-2. `TearDown` detecta fallo
-3. `ScreenshotHelper.TakeScreenshot()` captura pantalla
-4. Screenshot se adjunta a Allure
-5. Disponible en reporte bajo "Attachments"
-
-### Ejemplo Completo
-
-```csharp
-[TestFixture]
-[AllureSuite("Calculator Tests")]
-[AllureFeature("Basic Operations")]
-public class CalculatorTests : BaseTest
-{
-    [Test]
-    [Category("Smoke")]
-    [AllureTag("calculator", "addition", "smoke")]
-    [AllureSeverity(SeverityLevel.critical)]
-    [AllureDescription("Verifica que la suma de dos números positivos funcione correctamente")]
-    public void VerifyAddition_PositiveNumbers_Success()
+    [When("I perform some action")]
+    public void WhenIPerformSomeAction()
     {
-        // Arrange
-        AllureApi.Step("Preparar página de calculadora");
-        var calcPage = new CalculatorPage(MainWindow!);
+        ExtentReportManager.LogInfo("Performing action");
         
-        // Act
-        AllureApi.Step("Ingresar números: 5 y 3");
-        calcPage.EnterNumbers(5, 3);
-        
-        AllureApi.Step("Seleccionar operación: +");
-        calcPage.SelectOperation("+");
-        
-        AllureApi.Step("Hacer click en Calculate");
-        calcPage.ClickCalculate();
-        
-        Thread.Sleep(500);
-        
-        AllureApi.Step("Obtener resultado");
-        var result = calcPage.GetCalculationResult();
-        
-        // Assert
-        AllureApi.Step("Verificar que resultado sea 8");
-        Assert.That(result, Does.Contain("8"));
+        try
+        {
+            // your code
+            ExtentReportManager.LogPass("Action completed successfully");
+        }
+        catch (Exception ex)
+        {
+            ExtentReportManager.LogFail("Action failed", ex);
+            throw;
+        }
     }
 }
 ```
 
+### Log Methods
+
+```csharp
+// Information log
+ExtentReportManager.LogInfo("Test step description");
+
+// Pass log (green)
+ExtentReportManager.LogPass("Verification passed");
+
+// Fail log (red)
+ExtentReportManager.LogFail("Expected X but got Y");
+ExtentReportManager.LogFail("Error message", exception);
+
+// Warning log (yellow)
+ExtentReportManager.LogWarning("Retry attempt");
+
+// Skip log
+ExtentReportManager.LogSkip("Test skipped due to...");
+```
+
+### Automatic Screenshots
+
+`TestHooks` automatically captures screenshots when a scenario fails:
+
+1. Scenario fails with exception
+2. `AfterScenario` detects failure
+3. `ScreenshotHelper.TakeScreenshot()` captures screen
+4. Screenshot is attached to ExtentReports
+5. Available in report under the failed test
+
+### Test Categories
+
+Use NUnit categories to organize tests:
+
+```csharp
+[TestFixture]
+[Category("Demo")]
+public class CalculatorTests : BaseTest
+{
+    [Test]
+    [Category("Smoke")]
+    [Description("Verifies calculator opens correctly")]
+    public void VerifyCalculatorOpens()
+    {
+        // test code
+    }
+}
+```
+
+SpecFlow tags are automatically converted to categories:
+
+```gherkin
+@Calculator @Demo
+Feature: Windows Calculator
+
+  @Smoke
+  Scenario: Verify calculator opens
+    Given the calculator is open
+    When I verify the window title
+    Then the title should contain "Calculator"
+```
+
+## Cucumber JSON for Jira/Xray
+
+Hipos generates **Cucumber JSON** format reports compatible with **Jira Xray** for test management integration.
+
+### Automatic Generation
+
+The `cucumber.json` file is generated automatically alongside ExtentReports:
+
+```bash
+# Run tests
+dotnet test
+
+# Generated files:
+# - reports/extent-report.html (HTML report)
+# - reports/cucumber.json (Xray-compatible JSON)
+```
+
+### Configuration
+
+Configure in `appsettings.json`:
+
+```json
+{
+  "Reporting": {
+    "CucumberJsonPath": "reports/cucumber.json",
+    "IncludeScreenshots": true
+  }
+}
+```
+
+**Options:**
+- `CucumberJsonPath`: Path where cucumber.json will be saved
+- `IncludeScreenshots`: Include screenshots as base64 in JSON (for failures)
+
+### JSON Structure
+
+The cucumber.json file contains:
+
+```json
+[
+  {
+    "id": "windows-calculator",
+    "name": "Windows Calculator",
+    "description": "As a user...",
+    "keyword": "Feature",
+    "uri": "Features/Calculator.feature",
+    "tags": [
+      {"name": "@Calculator"},
+      {"name": "@Demo"}
+    ],
+    "elements": [
+      {
+        "id": "windows-calculator;perform-addition",
+        "name": "Perform a simple addition",
+        "keyword": "Scenario",
+        "type": "scenario",
+        "tags": [{"name": "@Complex"}],
+        "steps": [
+          {
+            "name": "the calculator is open",
+            "keyword": "Given ",
+            "result": {
+              "status": "passed",
+              "duration": 762000000
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+### Importing to Xray
+
+#### Option 1: Xray Web Interface
+
+1. Go to your project in Jira
+2. Navigate to **Xray** → **Import Execution Results**
+3. Select format: **Cucumber JSON**
+4. Upload `cucumber.json` file
+5. Configure import options (create new tests, update existing, etc.)
+
+#### Option 2: Xray REST API
+
+**Xray Cloud:**
+```bash
+curl -H "Content-Type: application/json" \
+     -X POST \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     --data @reports/cucumber.json \
+     https://xray.cloud.getxray.app/api/v2/import/execution/cucumber
+```
+
+**Xray Server/DC:**
+```bash
+curl -H "Content-Type: application/json" \
+     -X POST \
+     -u username:password \
+     --data @reports/cucumber.json \
+     https://your-jira-instance.com/rest/raven/2.0/import/execution/cucumber
+```
+
+#### Option 3: CI/CD Integration
+
+Example for GitHub Actions:
+
+```yaml
+- name: Run Tests
+  run: dotnet test
+
+- name: Upload results to Xray
+  if: always()
+  run: |
+    curl -H "Content-Type: application/json" \
+         -X POST \
+         -H "Authorization: Bearer ${{ secrets.XRAY_TOKEN }}" \
+         --data @src/Hipos.Tests/bin/Debug/net8.0-windows/reports/cucumber.json \
+         https://xray.cloud.getxray.app/api/v2/import/execution/cucumber
+```
+
+### Tag Mapping for Xray
+
+Use tags in your SpecFlow features to link with Xray test cases:
+
+```gherkin
+@CALC-123 @regression
+Feature: Calculator Operations
+  
+  @CALC-124 @smoke
+  Scenario: Simple addition
+    Given the calculator is open
+    When I perform the operation "2 + 3"
+    Then the result should be "5"
+```
+
+Tags like `@CALC-123` and `@CALC-124` will be imported to Xray and automatically link to corresponding Test Cases.
+
+### Benefits
+
+- 📊 **Complete traceability** between requirements, tests and executions
+- 🔄 **Automatic synchronization** of results on each execution
+- 📈 **Centralized metrics** and reports in Jira
+- 👥 **Visibility** for the entire team (QA, Dev, PM)
+- 🎯 **Test case management** directly from Jira
+
 ## Serilog Logging
 
-Hipos usa Serilog para logging estructurado.
+Hipos uses Serilog for structured logging.
 
-### Configuración
+### Configuration
 
-En `appsettings.json`:
+In `appsettings.json`:
 
 ```json
 {
@@ -188,121 +312,96 @@ En `appsettings.json`:
 }
 ```
 
-### Niveles de Log
+### Log Levels
 
-| Nivel | Uso | Ejemplo |
-|-------|-----|---------|
-| `Verbose` | Detalles muy granulares | Cada interacción con elemento |
-| `Debug` | Información de debug | Búsqueda de elementos, waits |
-| `Information` | Flujo general | "Test iniciado", "App lanzada" |
-| `Warning` | Situaciones anormales pero recuperables | Reintentos, timeouts |
-| `Error` | Errores que requieren atención | Fallos inesperados |
-| `Fatal` | Errores críticos | App crash |
+| Level | Usage | Example |
+|-------|-------|---------|
+| `Verbose` | Very granular details | Each element interaction |
+| `Debug` | Debug information | Element search, waits |
+| `Information` | General flow | "Test started", "App launched" |
+| `Warning` | Abnormal but recoverable situations | Retries, timeouts |
+| `Error` | Errors requiring attention | Unexpected failures |
+| `Fatal` | Critical errors | App crash |
 
-### Usar Serilog en Tu Código
+### Using Serilog in Your Code
 
 ```csharp
 using Serilog;
 
-public class MyPage : BasePage
+public class CalculatorPage : BasePage
 {
-    public void MyMethod()
+    public void ClickNumber(int number)
     {
-        Log.Information("Ejecutando MyMethod");
-        Log.Debug("Buscando elemento con ID: {AutomationId}", "ButtonId");
+        Log.Information("Clicking on number: {Number}", number);
+        Log.Debug("Looking for element with ID: {AutomationId}", $"num{number}Button");
         
         try
         {
-            // código
+            // code
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error en MyMethod");
+            Log.Error(ex, "Error clicking number");
             throw;
         }
     }
 }
 ```
 
-### Logging Estructurado
+### Structured Logging
 
-Serilog permite logging estructurado con propiedades:
+Serilog allows structured logging with properties:
 
 ```csharp
-Log.Information("Usuario {Username} intentó login desde {IpAddress}", username, ipAddress);
-// Output: Usuario john intentó login desde 192.168.1.1
+Log.Information("User {Username} attempted login from {IpAddress}", username, ipAddress);
+// Output: User john attempted login from 192.168.1.1
 ```
 
-### Ubicación de Logs
+### Log Location
 
-Por defecto, los logs se guardan en:
+By default, logs are saved in:
 ```
 src/Hipos.Tests/bin/Debug/net8.0-windows/logs/test-YYYYMMDD.log
 ```
 
-Rolling diario significa que cada día se crea un nuevo archivo.
+Daily rolling means a new file is created each day.
 
-### Ver Logs en Reporte Allure
-
-`BaseTest` automáticamente adjunta los logs al reporte de Allure en el `TearDown`:
-
-1. Lee el archivo de log más reciente
-2. Adjunta como attachment en Allure
-3. Disponible en reporte bajo "Attachments" → "Test Logs"
-
-## Artifacts en CI
+## Artifacts in CI
 
 ### GitHub Actions
 
-El workflow `ui-tests.yml` sube automáticamente artifacts:
+The `ui-tests.yml` workflow automatically uploads artifacts:
 
 ```yaml
-- name: Upload artifacts - Allure Report
+- name: Upload Test Reports
+  if: always()
   uses: actions/upload-artifact@v4
   with:
-    name: allure-report
-    path: allure-report/
+    name: test-reports
+    path: |
+      src/Hipos.Tests/bin/Debug/net8.0-windows/reports/
+      src/Hipos.Tests/bin/Debug/net8.0-windows/logs/
     retention-days: 30
 ```
 
-### Artifacts Disponibles
+### Available Artifacts
 
-1. **test-results-trx**: Resultados en formato TRX (XML)
-2. **allure-results**: Datos raw de Allure
-3. **allure-report**: Reporte HTML generado
-4. **screenshots**: Screenshots de fallos
-5. **test-logs**: Archivos de log de Serilog
+1. **extent-report.html**: Visual HTML report
+2. **cucumber.json**: Xray-compatible JSON
+3. **test-logs**: Serilog log files
+4. **screenshots**: Failure screenshots
 
-### Descargar Artifacts
+### Download Artifacts
 
-En GitHub:
-1. Ir a la pestaña "Actions"
-2. Click en el workflow run
-3. Scroll down a "Artifacts"
-4. Click para descargar ZIP
+On GitHub:
+1. Go to "Actions" tab
+2. Click on workflow run
+3. Scroll down to "Artifacts"
+4. Click to download ZIP
 
-## Personalización Avanzada
+## Advanced Customization
 
-### Custom Allure Categories
-
-Crea `categories.json` en la carpeta de results:
-
-```json
-[
-  {
-    "name": "UI Timeout Errors",
-    "matchedStatuses": ["failed"],
-    "messageRegex": ".*TimeoutException.*"
-  },
-  {
-    "name": "Element Not Found",
-    "matchedStatuses": ["failed"],
-    "messageRegex": ".*ElementNotAvailableException.*"
-  }
-]
-```
-
-### Múltiples Sinks de Serilog
+### Multiple Serilog Sinks
 
 ```json
 {
@@ -327,112 +426,92 @@ Crea `categories.json` en la carpeta de results:
 }
 ```
 
-### Allure Environment Info
+### Custom Report Path
 
-Crea `environment.properties` en allure-results:
-
-```properties
-Browser=N/A
-OS=Windows 10
-Framework=Hipos v1.0
-.NET=8.0
+```csharp
+// In TestHooks.cs
+var reportPath = ConfigManager.Instance.GetValue("Reporting:ExtentReportPath", "reports/extent-report.html");
+var fullReportPath = Path.Combine(Directory.GetCurrentDirectory(), reportPath);
+ExtentReportManager.InitializeReport(fullReportPath);
 ```
 
-### Allure Executor Info
-
-Para mostrar info de CI en el reporte, crea `executor.json`:
-
-```json
-{
-  "name": "GitHub Actions",
-  "type": "github",
-  "url": "https://github.com/user/repo/actions/runs/123456",
-  "buildOrder": 123,
-  "buildName": "CI Build #123",
-  "buildUrl": "https://github.com/user/repo/actions/runs/123456",
-  "reportUrl": "https://user.github.io/repo/allure-report/"
-}
-```
-
-## Mejores Prácticas
+## Best Practices
 
 ### Logging
 
 ✅ **DO:**
-- Log en nivel adecuado (Information para flujo, Debug para detalles)
-- Usa logging estructurado con propiedades
-- Log antes y después de acciones críticas
-- Log excepciones con `Log.Error(ex, "mensaje")`
+- Log at appropriate level (Information for flow, Debug for details)
+- Use structured logging with properties
+- Log before and after critical actions
+- Log exceptions with `Log.Error(ex, "message")`
 
 ❌ **DON'T:**
-- No hagas log de información sensible (passwords, tokens)
-- No uses `Console.WriteLine()` (usa Serilog)
-- No llenes logs con información irrelevante
+- Don't log sensitive information (passwords, tokens)
+- Don't use `Console.WriteLine()` (use Serilog)
+- Don't fill logs with irrelevant information
 
-### Allure
+### Reporting
 
 ✅ **DO:**
-- Usa Steps para documentar flujo de test
-- Adjunta evidencia relevante (screenshots, JSON)
-- Usa tags para categorizar tests
-- Establece severidad apropiada
+- Let TestHooks capture automatically on failures
+- Use descriptive test names and descriptions
+- Use tags to categorize tests
+- Include screenshots for visual verification
 
 ❌ **DON'T:**
-- No adjuntes archivos enormes (> 10MB)
-- No uses Steps para cada línea de código
-- No dupliques información (ej: Steps + Description con lo mismo)
+- Don't capture screenshot on every step (generates too many files)
+- Don't duplicate information
+- Don't attach huge files (> 10MB)
 
-### Screenshots
+### Xray Integration
 
 ✅ **DO:**
-- Deja que BaseTest capture automáticamente en fallos
-- Captura manualmente solo cuando necesites evidencia específica
-- Usa nombres descriptivos
+- Use consistent tag naming (@PROJECT-123)
+- Map tags to Jira test cases
+- Automate upload in CI/CD pipeline
+- Include meaningful test descriptions
 
 ❌ **DON'T:**
-- No captures screenshot en cada paso (genera muchos archivos)
-- No captures antes de verificar si hay ventana disponible
+- Don't manually upload every time (automate it)
+- Don't forget to configure authentication
+- Don't use generic tags without Jira mapping
 
 ## Troubleshooting
 
-### "No se generó reporte Allure"
+### "ExtentReports not generated"
 
-Verifica que:
-1. `allure-results/` exista y tenga archivos JSON
-2. Allure CLI esté instalado: `allure --version`
-3. Ejecutaste: `allure generate ...`
+Verify:
+1. `reports/` directory exists
+2. `ExtentReportManager.InitializeReport()` was called
+3. `ExtentReportManager.FlushReport()` was called in AfterTestRun
+4. No file permission issues
 
-### "Screenshots no aparecen en reporte"
+### "cucumber.json is empty"
 
-Verifica:
-1. Directorio `allure-results/screenshots/` exista
-2. Screenshots se copiaron a `allure-results/` antes de generar reporte
-3. BaseTest.TearDown se está ejecutando
+Verify:
+1. `CucumberJsonReportGenerator` is initialized in BeforeTestRun
+2. Scenarios are being captured (BeforeScenario, AfterStep, AfterScenario hooks)
+3. `GenerateReport()` is called in AfterTestRun
+4. Path in appsettings.json is correct
 
-### "Logs están vacíos"
+### "Screenshots don't appear in report"
 
-Verifica:
-1. Nivel de log en appsettings.json (usa Debug para más detalles)
-2. Permisos de escritura en directorio `logs/`
-3. Serilog se inicializó en OneTimeSetUp
+Verify:
+1. `ScreenshotHelper.TakeScreenshot()` is being called
+2. Screenshot path is correct
+3. File exists at the path
+4. `ExtentReportManager.AttachScreenshot()` is called
 
-## Ejemplo: Reportes en Azure DevOps
+### "Logs are empty"
 
-Si usas Azure DevOps, publica el reporte:
+Verify:
+1. Log level in appsettings.json (use Debug for more details)
+2. Write permissions in `logs/` directory
+3. Serilog initialized in BeforeTestRun
+4. Using `Log.Information()` not `Console.WriteLine()`
 
-```yaml
-- task: PublishTestResults@2
-  inputs:
-    testResultsFormat: 'NUnit'
-    testResultsFiles: '**/test-results.xml'
+## Next Steps
 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: 'allure-report'
-    ArtifactName: 'allure-report'
-```
-
-## Próximos Pasos
-
-- **[CI/CD](./ci-cd.md)** - Integra con pipelines
-- **[Troubleshooting](./troubleshooting.md)** - Soluciona problemas
+- **[CI/CD](./ci-cd.md)** - Integrate with pipelines
+- **[Troubleshooting](./troubleshooting.md)** - Solve common issues
+- **[Examples](./examples.md)** - See complete examples

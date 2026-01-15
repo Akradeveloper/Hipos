@@ -1,167 +1,167 @@
 ---
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 # Troubleshooting
 
-Soluciones a problemas comunes en automatización UI de Windows.
+Solutions to common problems in Windows UI automation.
 
-## Problemas de Lanzamiento de Aplicación
+## Application Launch Issues
 
-### TimeoutException: "No se pudo obtener la ventana principal"
+### TimeoutException: "Could not get main window"
 
-**Síntomas:**
+**Symptoms:**
 ```
-System.TimeoutException: No se pudo obtener la ventana principal después de 15000ms (PID: 38092)
+System.TimeoutException: Could not get main window after 15000ms (PID: 38092)
 ```
 
-**Causa:** El framework no puede encontrar la ventana de la aplicación.
+**Cause:** The framework cannot find the application window.
 
-#### Para Apps UWP (Calculadora, Apps de Windows Store)
+#### For UWP Apps (Calculator, Windows Store Apps)
 
-✅ **Solución 1:** Aumentar timeout a 15-20 segundos
+✅ **Solution 1:** Increase timeout to 15-20 seconds
 
 ```json
 {
   "AppPath": "calc.exe",
-  "DefaultTimeout": 20000  // 20 segundos
+  "DefaultTimeout": 20000  // 20 seconds
 }
 ```
 
-✅ **Solución 2:** Verificar en logs qué modo de búsqueda se usó
+✅ **Solution 2:** Check logs to see which search mode was used
 
 ```
-# Buscar en logs/test-*.log
+# Search in logs/test-*.log
 [00:05.000] ⚠️ Switching to relaxed search mode (by window title)
-[00:05.500] ✓ Ventana encontrada: 'Calculadora' (PID: 38124, Mode: Relaxed)
+[00:05.500] ✓ Window found: 'Calculadora' (PID: 38124, Mode: Relaxed)
 ```
 
-Si ves `Mode: Relaxed`, significa que la ventana está en un **proceso hijo** (normal en UWP).
+If you see `Mode: Relaxed`, it means the window is in a **child process** (normal for UWP).
 
-✅ **Solución 3:** Verificar que la app no requiere permisos de admin
+✅ **Solution 3:** Verify app doesn't require admin permissions
 
 ```bash
-# Ejecutar como usuario normal (NO como admin)
+# Run as normal user (NOT as admin)
 dotnet test
 ```
 
-#### Para Apps Win32 Clásicas (Notepad, Paint, apps legacy)
+#### For Classic Win32 Apps (Notepad, Paint, legacy apps)
 
-✅ **Solución:** Timeout de 5-10 segundos es suficiente
+✅ **Solution:** Timeout of 5-10 seconds is sufficient
 
 ```json
 {
   "AppPath": "notepad.exe",
-  "DefaultTimeout": 5000  // 5 segundos
+  "DefaultTimeout": 5000  // 5 seconds
 }
 ```
 
-Si falla, verifica que la app no esté bloqueada o requiera interacción manual.
+If it fails, verify the app isn't blocked or requires manual interaction.
 
-### Cursor/VS Code se Cierra al Ejecutar Tests
+### Cursor/VS Code Closes When Running Tests
 
-**Síntoma:** Al ejecutar `dotnet test`, el IDE se cierra inesperadamente.
+**Symptom:** When running `dotnet test`, the IDE closes unexpectedly.
 
-**Causa:** Versión antigua del framework que buscaba ventanas sin filtrar por PID.
+**Cause:** Old framework version that searched for windows without filtering by PID.
 
-✅ **Solución:** Actualizar a la última versión que incluye:
-- Búsqueda estricta por ProcessId en primeros 5 segundos
-- Lista de exclusión para IDEs (Cursor, VS Code, Visual Studio)
+✅ **Solution:** Update to latest version which includes:
+- Strict search by ProcessId in first 5 seconds
+- Exclusion list for IDEs (Cursor, VS Code, Visual Studio)
 
-**Verificar que tienes la última versión:**
+**Verify you have the latest version:**
 ```csharp
-// En AppLauncher.cs debería haber:
+// In AppLauncher.cs should have:
 var excludedTitles = new[] { 
     "Barra de tareas", "Taskbar", "Program Manager", 
     "Cursor", "Visual Studio", "Visual Studio Code"
 };
 ```
 
-## Problemas de Elementos
+## Element Issues
 
 ### Element Not Found / TimeoutException
 
-**Síntomas:**
+**Symptoms:**
 ```
 FlaUI.Core.Exceptions.ElementNotAvailableException: 
 Element with AutomationId 'ButtonId' not found
 ```
 
-**Causas y Soluciones:**
+**Causes and Solutions:**
 
-#### 1. AutomationId Incorrecto
+#### 1. Incorrect AutomationId
 
-✅ **Solución:** Usar Inspect.exe para verificar
+✅ **Solution:** Use Inspect.exe to verify
 
 ```bash
-# Ubicación (Windows SDK)
+# Location (Windows SDK)
 C:\Program Files (x86)\Windows Kits\10\bin\<version>\x64\inspect.exe
 ```
 
-**Pasos:**
-1. Abrir Inspect.exe
-2. Abrir tu aplicación
-3. Hover sobre el elemento
-4. Verificar propiedad "AutomationId" en panel derecho
-5. Copiar valor exacto (case-sensitive)
+**Steps:**
+1. Open Inspect.exe
+2. Open your application
+3. Hover over the element
+4. Verify "AutomationId" property in right panel
+5. Copy exact value (case-sensitive)
 
-#### 2. Elemento No Está Listo
+#### 2. Element Not Ready
 
-✅ **Solución:** Aumentar timeout o añadir wait específico
+✅ **Solution:** Increase timeout or add specific wait
 
 ```csharp
-// Aumentar timeout
+// Increase timeout
 var element = WaitHelper.WaitForElement(window, "ButtonId", timeoutMs: 10000);
 
-// O esperar condición específica
+// Or wait for specific condition
 WaitHelper.WaitUntil(
     () => element != null && element.IsEnabled,
     timeoutMs: 5000,
-    conditionDescription: "botón habilitado"
+    conditionDescription: "button enabled"
 );
 ```
 
-#### 3. Elemento en Popup/Modal
+#### 3. Element in Popup/Modal
 
-✅ **Solución:** Esperar a que popup aparezca primero
+✅ **Solution:** Wait for popup to appear first
 
 ```csharp
-// Esperar popup
+// Wait for popup
 WaitHelper.WaitForWindowTitle("Settings", 5000);
 
-// Buscar en todas las ventanas
+// Search in all windows
 var allWindows = automation.GetDesktop().FindAllChildren();
 var popup = allWindows.FirstOrDefault(w => w.Name == "Settings");
 
-// Buscar elemento en popup
+// Search element in popup
 var element = WaitHelper.WaitForElement(popup, "OkButton", 5000);
 ```
 
-#### 4. Aplicación Usa UI Framework No Estándar
+#### 4. Application Uses Non-Standard UI Framework
 
-✅ **Solución:** Cambiar a UIA2 (si UIA3 no funciona)
+✅ **Solution:** Switch to UIA2 (if UIA3 doesn't work)
 
 ```csharp
-// En lugar de UIA3Automation
+// Instead of UIA3Automation
 var automation = new UIA2Automation();
 ```
 
-### Flaky Tests (Intermitentes)
+### Flaky Tests (Intermittent)
 
-**Síntomas:** Tests pasan a veces pero fallan otras veces.
+**Symptoms:** Tests pass sometimes but fail other times.
 
-**Causas Comunes:**
+**Common Causes:**
 
-#### 1. Waits Insuficientes
+#### 1. Insufficient Waits
 
-❌ **Problema:**
+❌ **Problem:**
 ```csharp
 button.Click();
 Thread.Sleep(500);  // Hardcoded sleep
 var result = GetResult();
 ```
 
-✅ **Solución:**
+✅ **Solution:**
 ```csharp
 button.Click();
 WaitHelper.WaitForElement(window, "ResultLabel", 5000);
@@ -170,79 +170,79 @@ var result = GetResult();
 
 #### 2. Race Conditions
 
-❌ **Problema:**
+❌ **Problem:**
 ```csharp
 EnterText("user");
 EnterPassword("pass");
-ClickLogin();  // Click antes de que texto esté completamente ingresado
+ClickLogin();  // Click before text is fully entered
 ```
 
-✅ **Solución:**
+✅ **Solution:**
 ```csharp
 EnterText("user");
-Thread.Sleep(100);  // Pequeño delay para que procese
+Thread.Sleep(100);  // Small delay to process
 EnterPassword("pass");
 Thread.Sleep(100);
 WaitHelper.WaitForElementEnabled(loginButton, 5000);
 ClickLogin();
 ```
 
-#### 3. Estado Residual de Test Anterior
+#### 3. Residual State from Previous Test
 
-❌ **Problema:** Test depende del estado dejado por test anterior.
+❌ **Problem:** Test depends on state left by previous test.
 
-✅ **Solución:**
+✅ **Solution:**
 ```csharp
 [SetUp]
 public void TestSetUp()
 {
-    // BaseTest.SetUp ya lanzó app limpia
-    // Navegar a estado inicial conocido
+    // BaseTest.SetUp already launched clean app
+    // Navigate to known initial state
     ResetToDefaultState();
 }
 ```
 
-#### 4. Timing de Animaciones
+#### 4. Animation Timing
 
-✅ **Solución:** Esperar a que animación termine
+✅ **Solution:** Wait for animation to finish
 
 ```csharp
-// Esperar que elemento sea visible Y esté quieto
+// Wait for element to be visible AND settled
 WaitHelper.WaitUntil(
     () => element.IsVisible && element.BoundingRectangle.IsEmpty == false,
     5000,
-    conditionDescription: "elemento visible y renderizado"
+    conditionDescription: "element visible and rendered"
 );
 
-// Pequeño delay adicional para animaciones
+// Additional small delay for animations
 Thread.Sleep(300);
 ```
 
-## Problemas de Permisos
+## Permission Issues
 
-### Aplicación Requiere Permisos de Admin
+### Application Requires Admin Permissions
 
-**Síntomas:**
-- App no lanza
+**Symptoms:**
+- App doesn't launch
 - "Access denied"
-- UAC prompt aparece pero tests no pueden interactuar
+- UAC prompt appears but tests can't interact
 
-✅ **Soluciones:**
+✅ **Solutions:**
 
-#### Opción 1: Ejecutar Test Runner como Admin
+#### Option 1: Run Test Runner as Admin
 
 ```bash
-# Abrir terminal como Admin
+# Open terminal as Admin
 dotnet test
 ```
 
-En IDE:
-- Visual Studio: Ejecutar VS como Admin
-- Rider: Ejecutar Rider como Admin
+In IDE:
+- Visual Studio: Run VS as Admin
+- Rider: Run Rider as Admin
 
-#### Opción 2: Deshabilitar UAC para la App
+#### Option 2: Disable UAC for the App
 
-Crear manifest para la app que especifique nivel requerido:
+Create manifest for the app specifying required level:
 
 ```xml
 <!-- app.manifest -->
@@ -255,74 +255,74 @@ Crear manifest para la app que especifique nivel requerido:
 </trustInfo>
 ```
 
-#### Opción 3: Modificar UAC Settings (NO recomendado para producción)
+#### Option 3: Modify UAC Settings (NOT recommended for production)
 
-Solo para entorno de testing local:
+Only for local testing environment:
 1. Win + R → `UserAccountControlSettings`
-2. Bajar slider a "Never notify"
-3. Reiniciar
+2. Lower slider to "Never notify"
+3. Restart
 
-## Problemas de Sesión
+## Session Issues
 
-### Tests Fallan en CI (Session Lock)
+### Tests Fail in CI (Session Lock)
 
-**Síntomas:**
-- Tests pasan local
-- Fallan en CI con timeout
+**Symptoms:**
+- Tests pass locally
+- Fail in CI with timeout
 - Error: "Window not available"
 
-✅ **Solución:** Ver [CI/CD Guide](./ci-cd.md) - Sección "Sesión Interactiva"
+✅ **Solution:** See [CI/CD Guide](./ci-cd.md) - "Interactive Session" section
 
-Resumen:
-- Usar self-hosted runner
-- Configurar auto-login
-- Ejecutar runner en sesión interactiva (no como servicio)
+Summary:
+- Use self-hosted runner
+- Configure auto-login
+- Run runner in interactive session (not as service)
 
-### Lock Screen Interrumpe Tests
+### Lock Screen Interrupts Tests
 
-✅ **Solución:** Deshabilitar lock screen
+✅ **Solution:** Disable lock screen
 
 ```powershell
-# PowerShell como Admin
+# PowerShell as Admin
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" `
   -Name "InactivityTimeoutSecs" -Value 0 -PropertyType DWORD -Force
 
-# Deshabilitar screensaver
+# Disable screensaver
 Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name ScreenSaveActive -Value 0
 ```
 
-## Problemas de Resolución/DPI
+## Resolution/DPI Issues
 
-### Tests Fallan con Resolución Diferente
+### Tests Fail with Different Resolution
 
-**Síntomas:**
-- Click en coordenadas incorrectas
-- Screenshots muestran elementos cortados
-- BoundingRectangle no coincide
+**Symptoms:**
+- Click on incorrect coordinates
+- Screenshots show cut-off elements
+- BoundingRectangle doesn't match
 
-✅ **Solución 1:** No usar coordenadas, usar AutomationIds
+✅ **Solution 1:** Don't use coordinates, use AutomationIds
 
-❌ **No hacer esto:**
+❌ **Don't do this:**
 ```csharp
-Mouse.Click(new Point(100, 200));  // Coordenadas absolutas
+Mouse.Click(new Point(100, 200));  // Absolute coordinates
 ```
 
-✅ **Hacer esto:**
+✅ **Do this:**
 ```csharp
 var button = FindElement("ButtonId");
-button.Click();  // Click relativo al elemento
+button.Click();  // Click relative to element
 ```
 
-✅ **Solución 2:** Configurar resolución fija en CI
+✅ **Solution 2:** Configure fixed resolution in CI
 
 ```powershell
-# PowerShell en runner
+# PowerShell on runner
 Set-DisplayResolution -Width 1920 -Height 1080 -Force
 ```
 
-✅ **Solución 3:** DPI Awareness
+✅ **Solution 3:** DPI Awareness
 
-Si tu app es DPI-aware, asegúrate que tests también lo sean:
+If your app is DPI-aware, ensure tests are too:
 
 ```xml
 <!-- app.manifest -->
@@ -333,68 +333,68 @@ Si tu app es DPI-aware, asegúrate que tests también lo sean:
 </application>
 ```
 
-## Problemas de FlaUI
+## FlaUI Issues
 
 ### UIA3 vs UIA2
 
-**¿Cuándo usar UIA2 en lugar de UIA3?**
+**When to use UIA2 instead of UIA3?**
 
-Usa UIA2 si:
-- ❌ App legacy (Win32, WinForms antiguo)
-- ❌ UIA3 no encuentra elementos
-- ❌ App usa controles custom/third-party
+Use UIA2 if:
+- ❌ Legacy app (Win32, old WinForms)
+- ❌ UIA3 doesn't find elements
+- ❌ App uses custom/third-party controls
 
 ```csharp
-// Cambiar en AppLauncher.cs
-// De:
+// Change in AppLauncher.cs
+// From:
 _automation = new UIA3Automation();
 
-// A:
+// To:
 _automation = new UIA2Automation();
 ```
 
-### Diferencias Importantes
+### Important Differences
 
-| Aspecto | UIA3 | UIA2 |
+| Aspect | UIA3 | UIA2 |
 |---------|------|------|
-| Performance | ✅ Más rápido | ❌ Más lento |
-| Compatibilidad | ✅ Apps modernas | ✅ Apps legacy |
-| Mantenimiento | ✅ Activo | ⚠️ Legacy |
-| Features | ✅ Más completo | ❌ Limitado |
+| Performance | ✅ Faster | ❌ Slower |
+| Compatibility | ✅ Modern apps | ✅ Legacy apps |
+| Maintenance | ✅ Active | ⚠️ Legacy |
+| Features | ✅ More complete | ❌ Limited |
 
-## Problemas de Performance
+## Performance Issues
 
-### Tests Muy Lentos
+### Tests Very Slow
 
-**Causas:**
+**Causes:**
 
-#### 1. Timeouts Muy Largos
+#### 1. Timeouts Too Long
 
-✅ **Solución:** Ajustar timeouts apropiadamente
+✅ **Solution:** Adjust timeouts appropriately
 
 ```json
 // appsettings.json
 {
-  "DefaultTimeout": 3000  // Reducir de 5000 a 3000 si app es rápida
+  "DefaultTimeout": 3000  // Reduce from 5000 to 3000 if app is fast
 }
 ```
 
-#### 2. Esperas Innecesarias
+#### 2. Unnecessary Waits
 
-❌ **Problema:**
+❌ **Problem:**
 ```csharp
-Thread.Sleep(5000);  // Siempre espera 5 segundos
+Thread.Sleep(5000);  // Always waits 5 seconds
 ```
 
-✅ **Solución:**
+✅ **Solution:**
 ```csharp
 WaitHelper.WaitForElement(window, "ButtonId", 5000);
-// Retorna inmediatamente cuando encuentra elemento
+// Returns immediately when element is found
 ```
 
-#### 3. App Lanza Lento
+#### 3. App Launches Slowly
 
-✅ **Solución:** Aumentar timeout de launch
+✅ **Solution:** Increase launch timeout
 
 ```json
 {
@@ -406,84 +406,101 @@ WaitHelper.WaitForElement(window, "ButtonId", 5000);
 var window = launcher.LaunchApp(appPath, timeoutMs: 15000);
 ```
 
-#### 4. Logs Excesivos
+#### 4. Excessive Logging
 
-✅ **Solución:** Reducir nivel de log
+✅ **Solution:** Reduce log level
 
 ```json
 {
   "Serilog": {
-    "MinimumLevel": "Information"  // Cambiar de Debug a Information
+    "MinimumLevel": "Information"  // Change from Debug to Information
   }
 }
 ```
 
-## Problemas de Reporting
+## Reporting Issues
 
-### Allure Report No Se Genera
+### ExtentReports Not Generated
 
-**Síntomas:**
-```bash
-allure generate ...
-# Error: No test data found
-```
+**Symptoms:**
+- Report file doesn't exist
+- Report is empty
 
-✅ **Soluciones:**
+✅ **Solutions:**
 
-#### 1. Verificar allure-results existe
+#### 1. Verify reports directory exists
 
 ```bash
-ls src/Hipos.Tests/bin/Debug/net8.0-windows/allure-results/
-# Debería tener archivos: *-result.json, *-container.json
+ls src/Hipos.Tests/bin/Debug/net8.0-windows/reports/
+# Should have: extent-report.html, cucumber.json
 ```
 
-Si está vacío:
-- Verificar que Allure.NUnit esté instalado
-- Verificar que tests se ejecutaron completamente
+If empty:
+- Verify ExtentReports is initialized in `TestHooks` or `BaseTest`
+- Verify tests ran completely
+- Check for exceptions during `AfterTestRun`/`OneTimeTearDown`
 
-#### 2. Verificar Allure CLI instalado
+#### 2. Verify report is flushed
 
+Check that `ExtentReportManager.Flush()` is called in:
+- `TestHooks.AfterTestRun` (for SpecFlow)
+- `BaseTest.OneTimeTearDown` (for NUnit)
+
+### Screenshots Not Appearing in Report
+
+✅ **Solution:**
+
+Verify screenshots were saved:
 ```bash
-allure --version
-# Debería mostrar: 2.x.x
+ls src/Hipos.Tests/bin/Debug/net8.0-windows/reports/screenshots/
 ```
 
-Si no está instalado:
-```bash
-choco install allure-commandline
+If empty:
+- Test didn't fail (screenshots only on failures)
+- Verify write permissions
+- Verify `TestHooks.AfterScenario` or `BaseTest.TearDown` executes
+
+### Cucumber JSON Not Generated
+
+✅ **Solution:**
+
+Verify `CucumberJsonReportGenerator` is initialized and flushed:
+
+```csharp
+// In TestHooks.cs
+[BeforeTestRun]
+public static void BeforeTestRun()
+{
+    // ...
+    var cucumberJsonPath = ConfigManager.Instance.GetValue("Reporting:CucumberJsonPath", "reports/cucumber.json");
+    CucumberJsonReportGenerator.Initialize(cucumberJsonPath, includeScreenshots: true);
+}
+
+[AfterTestRun]
+public static void AfterTestRun()
+{
+    // ...
+    CucumberJsonReportGenerator.GenerateReport();
+}
 ```
 
-### Screenshots No Aparecen en Reporte
+## Configuration Issues
 
-✅ **Solución:**
+### appsettings.json Not Read
 
-Verificar que screenshots se guardaron:
-```bash
-ls src/Hipos.Tests/bin/Debug/net8.0-windows/allure-results/screenshots/
-```
+**Symptoms:**
+- `AppPath` is null or empty
+- Configuration uses defaults
 
-Si está vacío:
-- Test no falló (screenshots solo en fallos)
-- Verificar permisos de escritura
-- Verificar que `BaseTest.TearDown` se ejecuta
+✅ **Solutions:**
 
-## Problemas de Configuración
-
-### appsettings.json No Se Lee
-
-**Síntomas:**
-- `AppPath` es null o vacío
-- Configuración usa defaults
-
-✅ **Soluciones:**
-
-#### 1. Verificar archivo existe en output
+#### 1. Verify file exists in output
 
 ```bash
 ls src/Hipos.Tests/bin/Debug/net8.0-windows/appsettings.json
 ```
 
-Si no existe, verificar .csproj:
+If it doesn't exist, verify .csproj:
 ```xml
 <ItemGroup>
   <None Update="appsettings.json">
@@ -492,18 +509,18 @@ Si no existe, verificar .csproj:
 </ItemGroup>
 ```
 
-#### 2. Verificar formato JSON válido
+#### 2. Verify valid JSON format
 
-Usar validador JSON online o:
+Use online JSON validator or:
 ```bash
 # PowerShell
 Get-Content appsettings.json | ConvertFrom-Json
 ```
 
-### Variables de Entorno No Sobrescriben
+### Environment Variables Don't Override
 
 ```bash
-# Verificar sintaxis correcta
+# Verify correct syntax
 # Windows CMD
 set AppPath=C:\path\to\app.exe
 echo %AppPath%
@@ -512,95 +529,95 @@ echo %AppPath%
 $env:AppPath = "C:\path\to\app.exe"
 $env:AppPath
 
-# Bash (Git Bash en Windows)
+# Bash (Git Bash on Windows)
 export AppPath="C:/path/to/app.exe"
 echo $AppPath
 ```
 
-## FAQ / Limitaciones
+## FAQ / Limitations
 
-### ¿Por qué mis tests son flaky?
+### Why are my tests flaky?
 
-**Respuesta:** 99% de las veces es por **waits insuficientes o incorrectas**.
+**Answer:** 99% of the time it's due to **insufficient or incorrect waits**.
 
-- ❌ No uses `Thread.Sleep()` hardcodeado
-- ✅ Usa `WaitHelper.WaitForElement()` y variantes
-- ✅ Espera condiciones específicas, no tiempos arbitrarios
+- ❌ Don't use hardcoded `Thread.Sleep()`
+- ✅ Use `WaitHelper.WaitForElement()` and variants
+- ✅ Wait for specific conditions, not arbitrary times
 
-### ¿Puedo ejecutar tests en paralelo?
+### Can I run tests in parallel?
 
-**Respuesta:** NO recomendado para UI tests.
+**Answer:** NOT recommended for UI tests.
 
-**Razones:**
-- Solo una app puede tener foco a la vez
-- Elementos en ventanas de fondo pueden no ser accesibles
-- Race conditions entre tests
+**Reasons:**
+- Only one app can have focus at a time
+- Elements in background windows may not be accessible
+- Race conditions between tests
 
-Si quieres paralelizar:
-- Usa múltiples runners/VMs físicas (no en misma máquina)
-- O ejecuta cada test en VM/container aislado
+If you want to parallelize:
+- Use multiple runners/physical VMs (not on same machine)
+- Or run each test in isolated VM/container
 
-### ¿Funciona con aplicaciones Remote Desktop?
+### Does it work with Remote Desktop applications?
 
-**Respuesta:** NO directamente.
+**Answer:** NOT directly.
 
-UI Automation necesita acceso directo a la sesión de Windows. RDP crea una sesión separada.
+UI Automation needs direct access to Windows session. RDP creates a separate session.
 
-**Alternativas:**
-- Ejecutar tests EN el servidor remoto (self-hosted runner)
-- Usar tecnologías de virtualización (Hyper-V, VMware) en lugar de RDP
+**Alternatives:**
+- Run tests ON the remote server (self-hosted runner)
+- Use virtualization technologies (Hyper-V, VMware) instead of RDP
 
-### ¿Puedo testear apps 32-bit desde tests 64-bit?
+### Can I test 32-bit apps from 64-bit tests?
 
-**Respuesta:** SÍ, FlaUI maneja ambas arquitecturas.
+**Answer:** YES, FlaUI handles both architectures.
 
-Asegúrate que la configuración de build sea correcta:
+Ensure build configuration is correct:
 ```xml
 <PropertyGroup>
   <PlatformTarget>AnyCPU</PlatformTarget>
 </PropertyGroup>
 ```
 
-### ¿Funciona con aplicaciones Electron/Chromium?
+### Does it work with Electron/Chromium applications?
 
-**Respuesta:** PARCIALMENTE.
+**Answer:** PARTIALLY.
 
-- Elementos estándar (botones, textboxes) funcionan
-- Custom controls pueden no ser accesibles
-- Considera Selenium/Playwright para apps web-based
+- Standard elements (buttons, textboxes) work
+- Custom controls may not be accessible
+- Consider Selenium/Playwright for web-based apps
 
-## Herramientas de Debug
+## Debug Tools
 
 ### Inspect.exe (Windows SDK)
-- Ver estructura de UI
-- Identificar AutomationIds
-- Verificar propiedades de elementos
+- View UI structure
+- Identify AutomationIds
+- Verify element properties
 
 ### FlaUI Inspect
 ```bash
-# Instalar
+# Install
 dotnet tool install -g FlaUI.Inspect
 
-# Ejecutar
+# Run
 flaui-inspect
 ```
 
 ### Spy++ (Visual Studio)
-- Analizar jerarquía de ventanas
-- Ver mensajes de Windows
-- Debug de eventos
+- Analyze window hierarchy
+- View Windows messages
+- Debug events
 
-## Obtener Ayuda
+## Getting Help
 
-Si tu problema no está listado:
+If your problem isn't listed:
 
-1. **Revisar logs:** `src/Hipos.Tests/bin/Debug/net8.0-windows/logs/`
-2. **Capturar screenshot manual:** Durante debug, ver qué está pasando
-3. **Usar Inspect.exe:** Verificar que elementos sean accesibles
-4. **Simplificar:** Crear test mínimo que reproduzca el problema
-5. **Buscar en GitHub Issues:** [FlaUI Issues](https://github.com/FlaUI/FlaUI/issues)
+1. **Review logs:** `src/Hipos.Tests/bin/Debug/net8.0-windows/logs/`
+2. **Manual screenshot capture:** During debug, see what's happening
+3. **Use Inspect.exe:** Verify elements are accessible
+4. **Simplify:** Create minimal test that reproduces the problem
+5. **Search GitHub Issues:** [FlaUI Issues](https://github.com/FlaUI/FlaUI/issues)
 
-## Próximos Pasos
+## Next Steps
 
-- **[Contributing](./contributing.md)** - Contribuir al proyecto
-- **[Framework Guide](./framework-guide.md)** - Volver a guías
+- **[Contributing](./contributing.md)** - Contribute to the project
+- **[Framework Guide](./framework-guide.md)** - Back to guides

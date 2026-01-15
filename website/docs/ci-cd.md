@@ -1,110 +1,111 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # CI/CD Integration
 
-Guía completa para integrar Hipos con pipelines de CI/CD.
+Complete guide to integrate Hipos with CI/CD pipelines.
 
-## ⚠️ Limitación Crítica: Sesión Interactiva
+## ⚠️ Critical Limitation: Interactive Session
 
-### El Problema
+### The Problem
 
-**Los tests de UI Desktop en Windows requieren una sesión de escritorio interactiva activa.**
+**Desktop UI tests on Windows require an active interactive desktop session.**
 
 ```mermaid
 graph TB
-    subgraph problem[Problema]
-        A[GitHub Hosted Runner] -->|NO tiene| B[Sesión de Escritorio Activa]
-        B --> C[UI Automation FALLA]
-        C --> D[Tests No Ejecutan]
+    subgraph problem[Problem]
+        A[GitHub Hosted Runner] -->|DOES NOT have| B[Active Desktop Session]
+        B --> C[UI Automation FAILS]
+        C --> D[Tests Do Not Run]
     end
     
-    subgraph solution[Solución]
-        E[Self-Hosted Runner] -->|CON| F[Auto-Login Configurado]
-        F --> G[Sesión Interactiva]
-        G --> H[Tests Ejecutan OK]
+    subgraph solution[Solution]
+        E[Self-Hosted Runner] -->|WITH| F[Auto-Login Configured]
+        F --> G[Interactive Session]
+        G --> H[Tests Run OK]
     end
     
     style C fill:#f99,stroke:#f00
     style H fill:#9f9,stroke:#0f0
 ```
 
-### ¿Qué es una Sesión Interactiva?
+### What is an Interactive Session?
 
-Una **sesión interactiva** significa:
-- ✅ Usuario loggeado en Windows
-- ✅ Escritorio visible (aunque sea virtual/headless)
-- ✅ UI Automation puede acceder a elementos visuales
-- ✅ No hay lock screen activo
+An **interactive session** means:
+- ✅ User logged into Windows
+- ✅ Desktop visible (even if virtual/headless)
+- ✅ UI Automation can access visual elements
+- ✅ No active lock screen
 
-### Por Qué Falla en GitHub-Hosted Runners
+### Why It Fails on GitHub-Hosted Runners
 
-GitHub-hosted runners de Windows:
-- ❌ Ejecutan como servicio en background
-- ❌ No tienen sesión de escritorio activa
-- ❌ UI Automation no puede "ver" ventanas
-- ❌ Tests fallan con errores de timeout o elementos no encontrados
+GitHub-hosted Windows runners:
+- ❌ Run as background service
+- ❌ Do not have active desktop session
+- ❌ UI Automation cannot "see" windows
+- ❌ Tests fail with timeout or element not found errors
 
-## Soluciones Reales
+## Real Solutions
 
-### Opción 1: Self-Hosted Runner (Recomendado)
+### Option 1: Self-Hosted Runner (Recommended)
 
 **Setup:**
 
-1. **Preparar Máquina Windows**
-   - Windows 10/11 o Windows Server
-   - .NET 8 instalado
-   - Auto-login configurado
+1. **Prepare Windows Machine**
+   - Windows 10/11 or Windows Server
+   - .NET 8 installed
+   - Auto-login configured
 
-2. **Configurar Auto-Login**
+2. **Configure Auto-Login**
 
 ```powershell
-# Abrir Registry Editor
+# Open Registry Editor
 # HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon
 
-# Establecer:
+# Set:
 AutoAdminLogon = "1"
 DefaultUserName = "runner_user"
 DefaultPassword = "your_secure_password"
-DefaultDomainName = "WORKGROUP" # o tu dominio
+DefaultDomainName = "WORKGROUP" # or your domain
 ```
 
-O usar herramienta:
+Or use tool:
+
 ```powershell
 # Sysinternals Autologon
 .\Autologon.exe /accepteula
 ```
 
-3. **Instalar GitHub Runner**
+3. **Install GitHub Runner**
 
 ```powershell
-# Descargar runner
+# Download runner
 mkdir actions-runner && cd actions-runner
 Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.311.0/actions-runner-win-x64-2.311.0.zip -OutFile actions-runner-win-x64-2.311.0.zip
 Expand-Archive -Path actions-runner-win-x64-2.311.0.zip -DestinationPath .
 
-# Configurar
+# Configure
 .\config.cmd --url https://github.com/YOUR_ORG/YOUR_REPO --token YOUR_TOKEN
 
-# Instalar como servicio (NO recomendado para UI tests)
-# En su lugar, ejecutar en sesión interactiva:
+# Install as service (NOT recommended for UI tests)
+# Instead, run in interactive session:
 .\run.cmd
 ```
 
-4. **Ejecutar Runner en Sesión Interactiva**
+4. **Run Runner in Interactive Session**
 
-Crear tarea programada que inicie el runner al login:
+Create scheduled task that starts runner at login:
 
 ```powershell
 # Task Scheduler
 # Trigger: At log on
 # Action: Start a program
 # Program: C:\actions-runner\run.cmd
-# Run whether user is logged on or not: NO (debe estar logged on)
+# Run whether user is logged on or not: NO (must be logged on)
 ```
 
-**Workflow Modificado:**
+**Modified Workflow:**
 
 ```yaml
 name: UI Tests (Self-Hosted)
@@ -114,7 +115,7 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: [self-hosted, windows, ui-capable]
-    # Label 'ui-capable' para identificar runners con sesión interactiva
+    # Label 'ui-capable' to identify runners with interactive session
     
     steps:
       - uses: actions/checkout@v4
@@ -132,23 +133,42 @@ jobs:
       - name: Run UI Tests
         run: dotnet test --no-build
       
-      - name: Generate Allure Report
-        if: always()
-        run: allure generate src/Hipos.Tests/bin/Debug/net8.0-windows/allure-results -o allure-report --clean
-      
-      - name: Upload Artifacts
+      - name: Upload ExtentReports HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: |
-            allure-report/
-            **/logs/
+          name: extent-report
+          path: src/Hipos.Tests/bin/Debug/net8.0-windows/reports/extent-report.html
+          retention-days: 30
+      
+      - name: Upload Cucumber JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-json-report
+          path: src/Hipos.Tests/bin/Debug/net8.0-windows/reports/cucumber.json
+          retention-days: 30
+      
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: src/Hipos.Tests/bin/Debug/net8.0-windows/reports/screenshots/
+          retention-days: 30
+      
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: src/Hipos.Tests/bin/Debug/net8.0-windows/logs/
+          retention-days: 30
 ```
 
-### Opción 2: Azure DevOps con Agent Interactivo
+### Option 2: Azure DevOps with Interactive Agent
 
-Azure DevOps permite configurar agents en modo interactivo.
+Azure DevOps allows configuring agents in interactive mode.
 
 **azure-pipelines.yml:**
 
@@ -157,7 +177,7 @@ trigger:
   - main
 
 pool:
-  name: 'Windows-UI-Pool'  # Pool con agent interactivo
+  name: 'Windows-UI-Pool'  # Pool with interactive agent
 
 variables:
   solution: '**/*.sln'
@@ -185,7 +205,7 @@ steps:
         !**\*TestAdapter.dll
         !**\obj\**
       searchFolder: '$(System.DefaultWorkingDirectory)'
-      runSettingsFile: # Opcional
+      runSettingsFile: # Optional
       codeCoverageEnabled: true
   
   - task: PublishTestResults@2
@@ -197,35 +217,41 @@ steps:
   - task: PublishBuildArtifacts@1
     condition: always()
     inputs:
-      PathtoPublish: 'allure-report'
-      ArtifactName: 'allure-report'
+      PathtoPublish: 'reports/extent-report.html'
+      ArtifactName: 'extent-report'
+  
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    inputs:
+      PathtoPublish: 'reports/cucumber.json'
+      ArtifactName: 'cucumber-json-report'
 ```
 
-**Configurar Agent Interactivo:**
+**Configure Interactive Agent:**
 
-1. Instalar agent en Windows
-2. **NO instalarlo como servicio**
-3. Configurar auto-login
-4. Ejecutar agent desde sesión interactiva:
+1. Install agent on Windows
+2. **DO NOT install as service**
+3. Configure auto-login
+4. Run agent from interactive session:
 
 ```cmd
 .\run.cmd
 ```
 
-5. Crear tarea programada para auto-inicio
+5. Create scheduled task for auto-start
 
-### Opción 3: VM Dedicada con RDP Persistente
+### Option 3: Dedicated VM with Persistent RDP
 
 **Setup:**
 
-1. **Crear VM Windows en Cloud** (Azure, AWS, GCP)
+1. **Create Windows VM in Cloud** (Azure, AWS, GCP)
    - Windows Server 2019/2022
-   - RDP habilitado
-   - IP estática
+   - RDP enabled
+   - Static IP
 
-2. **Configurar RDP Persistente**
+2. **Configure Persistent RDP**
 
-Mantener sesión RDP siempre activa usando herramienta como `tscon`:
+Keep RDP session always active using tool like `tscon`:
 
 ```batch
 @echo off
@@ -234,15 +260,15 @@ for /f "skip=1 tokens=3" %%s in ('query user %USERNAME%') do (
 )
 ```
 
-Guardar como `disconnect.bat` y ejecutar al desconectar RDP.
+Save as `disconnect.bat` and run on RDP disconnect.
 
-3. **Instalar Runner/Agent**
+3. **Install Runner/Agent**
 
-Seguir pasos de Opción 1 o 2.
+Follow steps from Option 1 or 2.
 
-4. **Mantener Sesión Activa**
+4. **Keep Session Active**
 
-Script PowerShell que previene lock screen:
+PowerShell script that prevents lock screen:
 
 ```powershell
 # keep-alive.ps1
@@ -252,46 +278,195 @@ $myShell = New-Object -com "Wscript.Shell"
 
 for ($i = 0; $i -lt $minutes; $i++) {
   Start-Sleep -Seconds 60
-  $myShell.sendkeys("{F15}")  # Tecla que no hace nada pero mantiene activo
+  $myShell.sendkeys("{F15}")  # Key that does nothing but keeps active
 }
 ```
 
-Ejecutar en tarea programada cada 6 horas.
+Run in scheduled task every 6 hours.
 
-## GitHub Actions Workflow Actual
+## Jira/Xray Integration
 
-El workflow incluido en el repo (`ui-tests.yml`) está configurado para GitHub-hosted runner pero incluye advertencias:
+Hipos generates `cucumber.json` reports compatible with Jira/Xray for automatic test result import.
+
+### Upload to Xray via API
+
+After tests complete, upload the generated `cucumber.json` to Xray:
+
+#### GitHub Actions Example
 
 ```yaml
-name: UI Tests
+name: UI Tests with Xray Upload
 
 on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: windows-latest
-    
-    # ⚠️ IMPORTANTE: Este workflow PUEDE FALLAR en GitHub-hosted runner
-    # debido a la falta de sesión interactiva. Ver documentación sobre
-    # cómo usar self-hosted runner o alternativas.
+    runs-on: [self-hosted, windows, ui-capable]
     
     steps:
-      # ... resto del workflow ...
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore & Build
+        run: |
+          dotnet restore
+          dotnet build --no-restore
+      
+      - name: Run UI Tests
+        run: dotnet test --no-build
+        continue-on-error: true
+      
+      - name: Upload to Xray
+        if: always()
+        shell: powershell
+        run: |
+          $cucumberJsonPath = "src/Hipos.Tests/bin/Debug/net8.0-windows/reports/cucumber.json"
+          
+          if (Test-Path $cucumberJsonPath) {
+            $headers = @{
+              "Content-Type" = "application/json"
+              "Authorization" = "Bearer ${{ secrets.XRAY_API_TOKEN }}"
+            }
+            
+            $response = Invoke-RestMethod `
+              -Uri "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber" `
+              -Method Post `
+              -Headers $headers `
+              -InFile $cucumberJsonPath
+            
+            Write-Host "Upload to Xray successful. Test Execution Key: $($response.key)"
+          } else {
+            Write-Host "Cucumber JSON report not found at $cucumberJsonPath"
+            exit 1
+          }
+      
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            src/Hipos.Tests/bin/Debug/net8.0-windows/reports/
+            src/Hipos.Tests/bin/Debug/net8.0-windows/logs/
 ```
 
-### Modificar para Self-Hosted
-
-Cambiar la línea `runs-on`:
+#### Azure Pipelines Example
 
 ```yaml
-# Antes (GitHub-hosted)
-runs-on: windows-latest
-
-# Después (Self-hosted con label)
-runs-on: [self-hosted, windows, ui-tests]
+- task: PowerShell@2
+  displayName: 'Upload Results to Xray'
+  condition: always()
+  inputs:
+    targetType: 'inline'
+    script: |
+      $cucumberJsonPath = "src/Hipos.Tests/bin/Debug/net8.0-windows/reports/cucumber.json"
+      
+      if (Test-Path $cucumberJsonPath) {
+        $headers = @{
+          "Content-Type" = "application/json"
+          "Authorization" = "Bearer $(XRAY_API_TOKEN)"
+        }
+        
+        $response = Invoke-RestMethod `
+          -Uri "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber" `
+          -Method Post `
+          -Headers $headers `
+          -InFile $cucumberJsonPath
+        
+        Write-Host "Upload to Xray successful. Test Execution Key: $($response.key)"
+      } else {
+        Write-Host "Cucumber JSON report not found"
+        exit 1
+      }
 ```
 
-## Pipeline de CI/CD Completo
+### Xray Authentication
+
+#### Option 1: API Token (Recommended)
+
+1. In Jira, go to Xray → Settings → API Keys
+2. Generate new API Token
+3. Store in CI secrets:
+   - GitHub: Repository → Settings → Secrets → Actions
+   - Azure DevOps: Pipelines → Library → Variable Groups
+
+#### Option 2: Client ID/Secret
+
+```powershell
+# Get bearer token
+$authBody = @{
+  client_id = "${{ secrets.XRAY_CLIENT_ID }}"
+  client_secret = "${{ secrets.XRAY_CLIENT_SECRET }}"
+} | ConvertTo-Json
+
+$authResponse = Invoke-RestMethod `
+  -Uri "https://xray.cloud.getxray.app/api/v2/authenticate" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $authBody
+
+$token = $authResponse
+
+# Upload results
+$headers = @{
+  "Content-Type" = "application/json"
+  "Authorization" = "Bearer $token"
+}
+
+Invoke-RestMethod `
+  -Uri "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber" `
+  -Method Post `
+  -Headers $headers `
+  -InFile "reports/cucumber.json"
+```
+
+### Xray Import Options
+
+You can customize the import with query parameters:
+
+```powershell
+# Create new Test Execution
+$uri = "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber"
+
+# Update existing Test Execution
+$testExecutionKey = "PROJ-123"
+$uri = "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber?testExecKey=$testExecutionKey"
+
+# Link to Test Plan
+$testPlanKey = "PROJ-456"
+$uri = "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber?testPlanKey=$testPlanKey"
+
+# Specify Test Environments
+$testEnvironments = "Windows11,Chrome"
+$uri = "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber?testEnvironments=$testEnvironments"
+```
+
+### Tag Mapping
+
+SpecFlow tags are automatically mapped to Xray:
+
+```gherkin
+@Calculator @Smoke @PROJ-123
+Feature: Windows Calculator
+  As a user
+  I want to use the Windows Calculator
+  
+  @PROJ-124
+  Scenario: Simple addition
+    Given the calculator is open
+    When I perform the operation "2 + 3"
+    Then the result should be "5"
+```
+
+- `@PROJ-123`: Links feature to Jira issue
+- `@PROJ-124`: Links scenario to Test Case
+- `@Smoke`: Tag for categorization
+
+## Complete CI/CD Pipeline
 
 ```mermaid
 sequenceDiagram
@@ -299,7 +474,8 @@ sequenceDiagram
     participant GH as GitHub
     participant Runner as Self-Hosted Runner
     participant Tests as UI Tests
-    participant Allure as Allure Report
+    participant ExtentReports as ExtentReports
+    participant Xray as Jira/Xray
     participant Artifacts as Artifacts Storage
     
     Dev->>GH: git push
@@ -309,20 +485,23 @@ sequenceDiagram
     Tests->>Tests: Launch app
     Tests->>Tests: Execute tests
     Tests->>Tests: Capture screenshots (if fail)
-    Tests->>Allure: Generate report
-    Runner->>Artifacts: Upload: report, logs, screenshots
+    Tests->>ExtentReports: Generate HTML report
+    Tests->>Tests: Generate cucumber.json
+    Runner->>Xray: Upload cucumber.json
+    Xray->>Xray: Create Test Execution
+    Runner->>Artifacts: Upload: reports, logs, screenshots
     Artifacts->>Dev: Download artifacts
     Runner->>GH: Report status
     GH->>Dev: Notification (email/PR comment)
 ```
 
-## Strategies por Tipo de Tests
+## Strategies by Test Type
 
 ### Smoke Tests
-- ✅ Ejecutar en cada PR
-- ✅ Timeout corto (5-10 min)
-- ✅ Solo funcionalidad crítica
-- ✅ Bloquear merge si fallan
+- ✅ Run on every PR
+- ✅ Short timeout (5-10 min)
+- ✅ Only critical functionality
+- ✅ Block merge if they fail
 
 ```yaml
 jobs:
@@ -336,10 +515,10 @@ jobs:
 ```
 
 ### Regression Tests
-- ✅ Ejecutar en push a main
-- ✅ Ejecutar nightly (scheduled)
-- ✅ Suite completa
-- ✅ No bloquear merge (solo notificar)
+- ✅ Run on push to main
+- ✅ Run nightly (scheduled)
+- ✅ Full suite
+- ✅ Don't block merge (only notify)
 
 ```yaml
 on:
@@ -358,11 +537,11 @@ jobs:
         run: dotnet test
 ```
 
-## Artifacts y Reportes
+## Artifacts and Reports
 
-### Publicar Reporte Allure a GitHub Pages
+### Publish Documentation to GitHub Pages
 
-**1. Workflow separado (docs.yml ya incluido):**
+**1. Workflow for docs (docs.yml already included):**
 
 ```yaml
 name: Deploy Docs
@@ -389,46 +568,48 @@ jobs:
           publish_dir: ./website/build
 ```
 
-**2. Habilitar GitHub Pages:**
+**2. Enable GitHub Pages:**
 - Repo → Settings → Pages
 - Source: Deploy from a branch
 - Branch: gh-pages / root
 
-**3. Acceder:**
+**3. Access:**
 `https://yourusername.github.io/Hipos/`
 
-### Retención de Artifacts
+### Artifact Retention
 
-Por defecto, artifacts se guardan 90 días. Modificar:
+By default, artifacts are saved for 90 days. Modify:
 
 ```yaml
 - uses: actions/upload-artifact@v4
   with:
-    name: allure-report
-    path: allure-report/
-    retention-days: 30  # Cambiar según necesidad
+    name: extent-report
+    path: reports/extent-report.html
+    retention-days: 30  # Change as needed
 ```
 
-## Mejores Prácticas
+## Best Practices
 
 ### ✅ DO
 
-- Usa self-hosted runner para UI tests
-- Configura auto-login y sesión persistente
-- Ejecuta smoke tests en PRs, regression nightly
-- Sube artifacts en `always()` (incluso si tests fallan)
-- Usa labels específicos para runners UI-capable
-- Monitorea salud de runners (disk space, memoria)
+- Use self-hosted runner for UI tests
+- Configure auto-login and persistent session
+- Run smoke tests on PRs, regression nightly
+- Upload artifacts with `always()` (even if tests fail)
+- Use specific labels for UI-capable runners
+- Monitor runner health (disk space, memory)
+- Automate Xray upload for test traceability
 
 ### ❌ DON'T
 
-- No asumas que GitHub-hosted runner funcionará
-- No compartas runners UI entre múltiples repos sin aislamiento
-- No guardes credentials en workflows (usa secrets)
-- No ejecutes tests paralelos en mismo runner (UI conflicts)
-- No ignores fallos en CI ("funciona en mi máquina")
+- Don't assume GitHub-hosted runner will work
+- Don't share UI runners between multiple repos without isolation
+- Don't save credentials in workflows (use secrets)
+- Don't run parallel tests on same runner (UI conflicts)
+- Don't ignore CI failures ("works on my machine")
+- Don't commit Xray API tokens to repository
 
-## Monitoreo y Alertas
+## Monitoring and Alerts
 
 ### Slack/Teams Notifications
 
@@ -444,38 +625,46 @@ Por defecto, artifacts se guardan 90 días. Modificar:
 
 ### Email Notifications
 
-GitHub envía emails automáticamente en fallos si está configurado en:
+GitHub sends automatic emails on failures if configured in:
 - Settings → Notifications → Actions
 
 ## Troubleshooting CI
 
-### Tests pasan local pero fallan en CI
+### Tests pass locally but fail in CI
 
-Posibles causas:
-1. **No hay sesión interactiva** → Usar self-hosted con auto-login
-2. **Resolución de pantalla diferente** → Configurar resolución fija en VM
-3. **Permisos diferentes** → Ejecutar runner con mismos permisos que local
-4. **Timeouts muy cortos** → Aumentar en `appsettings.json`
+Possible causes:
+1. **No interactive session** → Use self-hosted with auto-login
+2. **Different screen resolution** → Configure fixed resolution in VM
+3. **Different permissions** → Run runner with same permissions as local
+4. **Timeouts too short** → Increase in `appsettings.json`
 
-### Runner se desconecta frecuentemente
+### Runner disconnects frequently
 
-- Verificar que VM no entre en modo sleep
-- Deshabilitar actualizaciones automáticas de Windows
-- Monitorear uso de memoria/disco
+- Verify VM doesn't enter sleep mode
+- Disable Windows automatic updates
+- Monitor memory/disk usage
 
-### Screenshots no se capturan en CI
+### Screenshots not captured in CI
 
-- Verificar que sesión esté activa (no locked)
-- Revisar permisos de escritura en directorio
-- Intentar captura de pantalla completa como fallback
+- Verify session is active (not locked)
+- Check write permissions in directory
+- Try full screen capture as fallback
 
-## Recursos Adicionales
+### Xray upload fails
+
+- Verify API token is valid and not expired
+- Check cucumber.json file exists and is valid JSON
+- Verify network connectivity to Xray API
+- Check Xray project permissions
+
+## Additional Resources
 
 - [GitHub Self-Hosted Runners](https://docs.github.com/en/actions/hosting-your-own-runners)
 - [Azure DevOps Agents](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/agents)
 - [FlaUI CI Best Practices](https://github.com/FlaUI/FlaUI/wiki)
+- [Xray API Documentation](https://docs.getxray.app/display/XRAYCLOUD/Import+Execution+Results+-+REST+v2)
 
-## Próximos Pasos
+## Next Steps
 
-- **[Troubleshooting](./troubleshooting.md)** - Solucionar problemas
-- **[Contributing](./contributing.md)** - Contribuir al proyecto
+- **[Troubleshooting](./troubleshooting.md)** - Solve problems
+- **[Contributing](./contributing.md)** - Contribute to the project

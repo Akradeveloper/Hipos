@@ -4,59 +4,58 @@ sidebar_position: 2
 
 # Getting Started
 
-Esta guía te llevará desde cero hasta ejecutar tu primer test en **menos de 5 minutos**.
+This guide will take you from zero to running your first test in **less than 5 minutes**.
 
-## Prerrequisitos
+## Prerequisites
 
-Antes de comenzar, asegúrate de tener instalado:
+Before starting, make sure you have installed:
 
-### Software Requerido
+### Required Software
 
-| Software | Versión Mínima | Descarga |
+| Software | Minimum Version | Download |
 |----------|----------------|----------|
-| **Windows** | 10 o superior | - |
+| **Windows** | 10 or higher | - |
 | **.NET SDK** | 8.0 | [Download](https://dotnet.microsoft.com/download) |
-| **Git** | Cualquiera | [Download](https://git-scm.com/) |
+| **Git** | Any | [Download](https://git-scm.com/) |
 
-### Software Recomendado
+### Recommended Software
 
-- **Visual Studio 2022** o **JetBrains Rider** para desarrollo
-- **Allure CLI** para generar reportes localmente
-- **Windows SDK** con UI Automation Tools (incluye Inspect.exe)
+- **Visual Studio 2022** or **JetBrains Rider** for development
+- **Windows SDK** with UI Automation Tools (includes Inspect.exe)
 
-### Verificar Instalación
+### Verify Installation
 
 ```bash
-# Verificar .NET
+# Verify .NET
 dotnet --version
-# Debería mostrar: 8.0.x o superior
+# Should show: 8.0.x or higher
 
-# Verificar Git
+# Verify Git
 git --version
 ```
 
-## Instalación
+## Installation
 
-### 1. Clonar el Repositorio
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/yourusername/Hipos.git
 cd Hipos
 ```
 
-### 2. Restaurar Dependencias
+### 2. Restore Dependencies
 
 ```bash
 dotnet restore
 ```
 
-### 3. Build del Proyecto
+### 3. Build the Project
 
 ```bash
 dotnet build
 ```
 
-Si todo está correcto, deberías ver:
+If everything is correct, you should see:
 
 ```
 Build succeeded.
@@ -64,116 +63,113 @@ Build succeeded.
     0 Error(s)
 ```
 
-## Tu Primer Test
+## Your First Test
 
-### 1. Ejecutar Tests Básicos (Demo)
+### 1. Run Basic Tests (Demo)
 
-Los tests demo verifican que la Calculadora se abre y está funcional:
+Demo tests verify that Calculator opens and is functional:
 
 ```bash
 dotnet test --filter "Category=Demo"
 ```
 
-### 2. Ejecutar Tests Complejos
+### 2. Run Complex Tests
 
-Tests que realizan operaciones matemáticas reales:
+Tests that perform real mathematical operations:
 
 ```bash
 dotnet test --filter "Category=Complex"
 ```
 
-### 3. Ejecutar Todos los Tests
+### 3. Run All Tests
 
 ```bash
 dotnet test
 ```
 
-Deberías ver algo como:
+You should see something like:
 
 ```
-✅ Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11
-⏱️  Duration: ~16s
+✅ Passed! - Failed: 0, Passed: 22, Skipped: 0, Total: 22
+⏱️  Duration: ~90s
 ```
 
-### 3. Ver los Resultados
+### 4. View the Reports
 
-Los resultados se generan en múltiples formatos:
+Reports are generated automatically in multiple formats:
 
 ```bash
-# Resultados TRX (XML)
-src/Hipos.Tests/TestResults/*.trx
+# ExtentReports HTML
+src/Hipos.Tests/bin/Debug/net8.0-windows/reports/extent-report.html
 
-# Resultados Allure
-src/Hipos.Tests/bin/Debug/net8.0-windows/allure-results/
+# Cucumber JSON (for Jira/Xray)
+src/Hipos.Tests/bin/Debug/net8.0-windows/reports/cucumber.json
 
 # Logs
 src/Hipos.Tests/bin/Debug/net8.0-windows/logs/
 ```
 
-## Generar Reporte Allure
+## Open HTML Report
 
-### Instalar Allure (solo primera vez)
-
-#### Windows (Chocolatey)
-```bash
-choco install allure-commandline
-```
-
-#### Windows (Scoop)
-```bash
-scoop install allure
-```
-
-#### Manual
-Descarga desde [GitHub Releases](https://github.com/allure-framework/allure2/releases) y añade al PATH.
-
-### Generar y Abrir Reporte
+### Windows
 
 ```bash
-# Generar reporte
-allure generate src/Hipos.Tests/bin/Debug/net8.0-windows/allure-results -o allure-report --clean
-
-# Abrir en navegador
-allure open allure-report
+# Open ExtentReports in browser
+start src\Hipos.Tests\bin\Debug\net8.0-windows\reports\extent-report.html
 ```
 
-El reporte incluye:
-- ✅ Estado de cada test (passed/failed)
-- 📊 Gráficas y estadísticas
-- 📸 Screenshots de fallos
-- 📄 Logs detallados
-- 🏷️ Tags y categorías
+### PowerShell
 
-## Estructura del Proyecto
+```powershell
+Invoke-Item src\Hipos.Tests\bin\Debug\net8.0-windows\reports\extent-report.html
+```
+
+The report includes:
+- ✅ Status of each test (passed/failed)
+- 📊 Charts and statistics
+- 📸 Screenshots of failures
+- 📄 Detailed logs
+- 🏷️ Tags and categories
+- 🌙 Dark theme
+
+## Project Structure
 
 ```
 Hipos/
 ├── src/
-│   ├── Hipos.Framework/        # Core del framework
+│   ├── Hipos.Framework/        # Framework core
 │   │   ├── Core/               # AppLauncher, BaseTest, ScreenshotHelper
 │   │   ├── Utils/              # WaitHelper, ElementWrapper, RetryPolicy
+│   │   │                       # ExtentReportManager, CucumberJsonReportGenerator
 │   │   └── Config/             # ConfigManager
-│   └── Hipos.Tests/            # Tests y Page Objects
+│   └── Hipos.Tests/            # Tests and Page Objects
 │       ├── PageObjects/        # CalculatorPage, BasePage
-│       ├── Tests/              # CalculatorTests (11 tests)
-│       └── appsettings.json    # Configuración
-├── website/                    # Documentación Docusaurus
+│       ├── StepDefinitions/    # SpecFlow step definitions
+│       ├── Features/           # Gherkin feature files
+│       ├── Tests/              # NUnit tests (11 tests)
+│       ├── Hooks/              # SpecFlow hooks (TestHooks.cs)
+│       └── appsettings.json    # Configuration
+├── website/                    # Docusaurus documentation
 └── .github/workflows/          # CI/CD (ui-tests.yml, docs.yml)
 ```
 
-**Nota:** El proyecto `Hipos.DemoApp` fue eliminado. Los tests ahora funcionan contra la **Calculadora de Windows** (`calc.exe`).
+**Note:** Tests work against **Windows Calculator** (`calc.exe`).
 
-## Configuración
+## Configuration
 
 ### appsettings.json
 
-Configura la aplicación a testear en `src/Hipos.Tests/appsettings.json`:
+Configure the application to test in `src/Hipos.Tests/appsettings.json`:
 
 ```json
 {
   "AppPath": "calc.exe",
   "DefaultTimeout": 15000,
   "RetryCount": 3,
+  "Reporting": {
+    "CucumberJsonPath": "reports/cucumber.json",
+    "IncludeScreenshots": true
+  },
   "Serilog": {
     "MinimumLevel": "Information",
     "WriteTo": [
@@ -189,22 +185,24 @@ Configura la aplicación a testear en `src/Hipos.Tests/appsettings.json`:
 }
 ```
 
-**Parámetros importantes:**
-- `AppPath`: Ruta al ejecutable (absoluta, relativa, o en PATH)
-  - `calc.exe` - Calculadora de Windows
-  - `notepad.exe` - Bloc de notas
-  - `C:\MiApp\App.exe` - Tu aplicación personalizada
-- `DefaultTimeout`: Timeout en milisegundos (15s recomendado para apps UWP)
-- `RetryCount`: Número de reintentos para errores transitorios
+**Important Parameters:**
+- `AppPath`: Path to executable (absolute, relative, or in PATH)
+  - `calc.exe` - Windows Calculator
+  - `notepad.exe` - Notepad
+  - `C:\MyApp\App.exe` - Your custom application
+- `DefaultTimeout`: Timeout in milliseconds (15s recommended for UWP apps)
+- `RetryCount`: Number of retries for transient errors
+- `Reporting.CucumberJsonPath`: Path for Jira/Xray compatible JSON
+- `Reporting.IncludeScreenshots`: Include screenshots in JSON (base64)
 
-**Aplicaciones Soportadas:**
-- ✅ Win32 clásicas (Notepad, Paint, apps legacy)
-- ✅ Apps UWP modernas (Calculadora, apps de Windows Store)
-- ✅ WPF/WinForms (tus aplicaciones personalizadas)
+**Supported Applications:**
+- ✅ Classic Win32 (Notepad, Paint, legacy apps)
+- ✅ Modern UWP (Calculator, Windows Store apps)
+- ✅ WPF/WinForms (your custom applications)
 
-### Variables de Entorno
+### Environment Variables
 
-También puedes usar variables de entorno (sobrescriben appsettings.json):
+You can also use environment variables (they override appsettings.json):
 
 ```bash
 # Windows
@@ -216,58 +214,85 @@ $env:AppPath = "C:\path\to\your\app.exe"
 $env:DefaultTimeout = "10000"
 ```
 
-## Ejecutar Tests desde IDE
+## Run Tests from IDE
 
 ### Visual Studio
 
-1. Abrir `Hipos.sln`
-2. Ir a **Test Explorer** (Ctrl+E, T)
-3. Click derecho → Run/Debug tests
+1. Open `Hipos.sln`
+2. Go to **Test Explorer** (Ctrl+E, T)
+3. Right-click → Run/Debug tests
 
 ### Rider
 
-1. Abrir `Hipos.sln`
-2. Ir a **Unit Tests** (Alt+8)
-3. Click derecho → Run/Debug tests
+1. Open `Hipos.sln`
+2. Go to **Unit Tests** (Alt+8)
+3. Right-click → Run/Debug tests
 
-## Próximos Pasos
+## Integration with Jira/Xray
 
-Ahora que tienes el framework funcionando:
+After running tests, the `cucumber.json` file is ready to import:
 
-1. **[Arquitectura](./architecture.md)** - Entiende cómo está organizado
-2. **[Framework Guide](./framework-guide.md)** - Aprende a crear tus propios tests
-3. **[Reporting](./reporting-logging.md)** - Personaliza reportes y logs
-4. **[CI/CD](./ci-cd.md)** - Integra con tu pipeline
+```bash
+# File location
+src/Hipos.Tests/bin/Debug/net8.0-windows/reports/cucumber.json
 
-## Troubleshooting Rápido
-
-### Error: "No se encontró el ejecutable"
-
-**Para apps del sistema** (calc, notepad): Usa solo el nombre del ejecutable:
-```json
-"AppPath": "calc.exe"  // ✅ Correcto
+# Upload to Xray Cloud via API
+curl -H "Content-Type: application/json" \
+     -X POST \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     --data @cucumber.json \
+     https://xray.cloud.getxray.app/api/v2/import/execution/cucumber
 ```
 
-**Para apps personalizadas**: Usa ruta absoluta o relativa:
+See [Reporting & Logging](./reporting-logging.md) for detailed Xray integration guide.
+
+## Next Steps
+
+Now that you have the framework running:
+
+1. **[Architecture](./architecture.md)** - Understand how it's organized
+2. **[Framework Guide](./framework-guide.md)** - Learn to create your own tests
+3. **[Reporting & Logging](./reporting-logging.md)** - Customize reports and Xray integration
+4. **[Examples](./examples.md)** - See complete code examples
+5. **[CI/CD](./ci-cd.md)** - Integrate with your pipeline
+
+## Quick Troubleshooting
+
+### Error: "Executable not found"
+
+**For system apps** (calc, notepad): Use only the executable name:
 ```json
-"AppPath": "C:\\MiApp\\bin\\Debug\\App.exe"  // ✅ Correcto
+"AppPath": "calc.exe"  // ✅ Correct
 ```
 
-### Tests se cuelgan o timeout
+**For custom apps**: Use absolute or relative path:
+```json
+"AppPath": "C:\\MyApp\\bin\\Debug\\App.exe"  // ✅ Correct
+```
 
-**Apps UWP (Calculadora, etc.):**
-- Aumenta `DefaultTimeout` a 15000 o más
-- El framework usa búsqueda híbrida (primeros 5s strict, luego relaxed)
-- Revisa logs en `logs/test-*.log` para ver qué modo de búsqueda se usó
+### Tests hang or timeout
 
-**Apps Win32 clásicas:**
-- `DefaultTimeout` de 5000-10000 suele ser suficiente
-- Verifica que la app no requiera permisos de admin
-- Revisa logs en `src/Hipos.Tests/bin/Debug/net8.0-windows/logs/`
+**UWP Apps (Calculator, etc.):**
+- Increase `DefaultTimeout` to 15000 or more
+- Framework uses hybrid search (first 5s strict, then relaxed)
+- Check logs in `logs/test-*.log` to see which search mode was used
 
-### No se generan screenshots
+**Classic Win32 Apps:**
+- `DefaultTimeout` of 5000-10000 is usually sufficient
+- Verify the app doesn't require admin permissions
+- Check logs in `src/Hipos.Tests/bin/Debug/net8.0-windows/logs/`
 
-- Verifica que FlaUI pueda capturar la ventana
-- Revisa permisos de escritura en directorio `allure-results/`
+### Screenshots not generated
 
-Para más ayuda, consulta [Troubleshooting](./troubleshooting.md).
+- Verify FlaUI can capture the window
+- Check write permissions in `reports/` directory
+- Verify `ScreenshotHelper.TakeScreenshot()` is being called
+
+### Report not generated
+
+- Verify `reports/` directory exists
+- Check `ExtentReportManager.InitializeReport()` was called
+- Check `ExtentReportManager.FlushReport()` was called
+- Look for errors in logs
+
+For more help, see [Troubleshooting](./troubleshooting.md).

@@ -4,75 +4,77 @@ sidebar_position: 8
 
 # Contributing
 
-¡Gracias por tu interés en contribuir a Hipos! Este documento explica cómo puedes participar.
+Thank you for your interest in contributing to Hipos! This document explains how you can participate.
 
-## Cómo Contribuir
+## How to Contribute
 
-### Reportar Bugs
+### Report Bugs
 
-¿Encontraste un bug? Abre un issue en GitHub con:
+Found a bug? Open an issue on GitHub with:
 
-1. **Título descriptivo**: "ElementWrapper.SetText falla con ComboBox"
-2. **Descripción detallada**:
-   - Qué esperabas que pasara
-   - Qué pasó realmente
-   - Pasos para reproducir
-3. **Entorno**:
+1. **Descriptive title**: "ElementWrapper.SetText fails with ComboBox"
+2. **Detailed description**:
+   - What you expected to happen
+   - What actually happened
+   - Steps to reproduce
+3. **Environment**:
    - OS: Windows 10/11
    - .NET Version: 8.0.x
    - FlaUI Version: 4.0.x
-4. **Código de ejemplo**:
+4. **Sample code**:
+
 ```csharp
 var element = FindElement("ComboBoxId");
-element.SetText("value");  // Lanza excepción aquí
+element.SetText("value");  // Throws exception here
 ```
-5. **Logs/Screenshots**: Si es posible
 
-### Sugerir Mejoras
+5. **Logs/Screenshots**: If possible
 
-¿Tienes una idea? Abre un issue con:
+### Suggest Improvements
 
-1. **Título**: "Feature: Soporte para drag & drop"
-2. **Caso de uso**: Por qué es útil
-3. **Propuesta**: Cómo podría implementarse
-4. **Alternativas**: Otras opciones consideradas
+Have an idea? Open an issue with:
 
-### Contribuir Código
+1. **Title**: "Feature: Support for drag & drop"
+2. **Use case**: Why it's useful
+3. **Proposal**: How it could be implemented
+4. **Alternatives**: Other options considered
 
-#### 1. Fork y Clone
+### Contribute Code
+
+#### 1. Fork and Clone
 
 ```bash
-# Fork en GitHub primero, luego:
-git clone https://github.com/TU_USUARIO/Hipos.git
+# Fork on GitHub first, then:
+git clone https://github.com/YOUR_USERNAME/Hipos.git
 cd Hipos
 git remote add upstream https://github.com/ORIGINAL_OWNER/Hipos.git
 ```
 
-#### 2. Crear Branch
+#### 2. Create Branch
 
 ```bash
-git checkout -b feature/mi-nueva-feature
-# o
-git checkout -b bugfix/arreglar-elemento-wrapper
+git checkout -b feature/my-new-feature
+# or
+git checkout -b bugfix/fix-element-wrapper
 ```
 
-**Convención de nombres:**
-- `feature/nombre-descriptivo` - Nueva funcionalidad
-- `bugfix/nombre-descriptivo` - Corrección de bug
-- `docs/nombre-descriptivo` - Cambios en documentación
-- `refactor/nombre-descriptivo` - Refactoring sin cambio funcional
+**Naming convention:**
+- `feature/descriptive-name` - New functionality
+- `bugfix/descriptive-name` - Bug fix
+- `docs/descriptive-name` - Documentation changes
+- `refactor/descriptive-name` - Refactoring without functional change
 
-#### 3. Hacer Cambios
+#### 3. Make Changes
 
-Sigue las guías de estilo (ver abajo).
+Follow the style guides (see below).
 
-#### 4. Testear
+#### 4. Test
 
 ```bash
-# Ejecutar todos los tests
+# Run all tests
 dotnet test
 
-# Verificar que tus cambios funcionan
+# Verify your changes work
 dotnet test --filter "FullyQualifiedName~MyNewTest"
 ```
 
@@ -80,49 +82,49 @@ dotnet test --filter "FullyQualifiedName~MyNewTest"
 
 ```bash
 git add .
-git commit -m "feat: agregar soporte para drag and drop
+git commit -m "feat: add drag and drop support
 
-- Implementar DragAndDropHelper
-- Añadir tests para drag and drop
-- Actualizar documentación
+- Implement DragAndDropHelper
+- Add tests for drag and drop
+- Update documentation
 
 Closes #123"
 ```
 
-**Formato de commit messages:**
-- `feat:` Nueva funcionalidad
-- `fix:` Corrección de bug
-- `docs:` Cambios en documentación
-- `style:` Formateo, espacios, etc.
-- `refactor:` Refactoring de código
-- `test:` Añadir o modificar tests
-- `chore:` Mantenimiento, deps, etc.
+**Commit message format:**
+- `feat:` New functionality
+- `fix:` Bug fix
+- `docs:` Documentation changes
+- `style:` Formatting, spaces, etc.
+- `refactor:` Code refactoring
+- `test:` Add or modify tests
+- `chore:` Maintenance, dependencies, etc.
 
-#### 6. Push y Pull Request
+#### 6. Push and Pull Request
 
 ```bash
-git push origin feature/mi-nueva-feature
+git push origin feature/my-new-feature
 ```
 
-En GitHub:
-1. Crear Pull Request desde tu branch
-2. Llenar template de PR (descripción, tests, checklist)
-3. Esperar review
-4. Aplicar feedback si es necesario
-5. Merge cuando sea aprobado
+On GitHub:
+1. Create Pull Request from your branch
+2. Fill out PR template (description, tests, checklist)
+3. Wait for review
+4. Apply feedback if necessary
+5. Merge when approved
 
-## Guías de Estilo
+## Style Guides
 
 ### C# Code Style
 
 #### General
 
-- **Indentación**: 4 espacios (no tabs)
+- **Indentation**: 4 spaces (no tabs)
 - **Encoding**: UTF-8
 - **Line endings**: CRLF (Windows)
-- **Naming**: PascalCase para tipos, camelCase para variables
+- **Naming**: PascalCase for types, camelCase for variables
 
-#### Convenciones
+#### Conventions
 
 ```csharp
 // Namespaces
@@ -132,109 +134,112 @@ using Hipos.Framework.Core;
 
 namespace Hipos.Framework.Utils;  // File-scoped namespace (C# 10+)
 
-// Clases
+// Classes
 public class MyHelper
 {
-    // Campos privados: _camelCase
+    // Private fields: _camelCase
     private readonly string _fieldName;
     private static readonly object _lock = new();
     
-    // Propiedades: PascalCase
+    // Properties: PascalCase
     public string PropertyName { get; set; }
     protected int ProtectedProperty { get; }
     
-    // Métodos: PascalCase
+    // Methods: PascalCase
     public void DoSomething()
     {
-        // Variables locales: camelCase
+        // Local variables: camelCase
         var localVariable = "value";
         
-        // Constantes: PascalCase
+        // Constants: PascalCase
         const string ConstantValue = "CONSTANT";
     }
     
-    // Métodos privados: PascalCase (no _ prefix)
+    // Private methods: PascalCase (no _ prefix)
     private void HelperMethod()
     {
     }
 }
 ```
 
-#### Documentación
+#### Documentation
 
-Añade XML comments a APIs públicas:
+Add XML comments to public APIs:
 
 ```csharp
 /// <summary>
-/// Hace click en un elemento después de esperar a que sea clickeable.
+/// Clicks an element after waiting for it to be clickable.
 /// </summary>
-/// <param name="element">Elemento a hacer click</param>
-/// <param name="timeoutMs">Timeout en milisegundos</param>
-/// <returns>True si click fue exitoso, false en caso contrario</returns>
-/// <exception cref="ArgumentNullException">Si element es null</exception>
+/// <param name="element">Element to click</param>
+/// <param name="timeoutMs">Timeout in milliseconds</param>
+/// <returns>True if click was successful, false otherwise</returns>
+/// <exception cref="ArgumentNullException">If element is null</exception>
 public bool ClickElement(AutomationElement element, int timeoutMs = 5000)
 {
-    // Implementación
+    // Implementation
 }
 ```
 
 #### Null Safety
 
 ```csharp
-// Usa nullable reference types
-public string? GetText()  // Puede retornar null
+// Use nullable reference types
+public string? GetText()  // Can return null
 {
     return element?.Name;
 }
 
-// Valida argumentos
+// Validate arguments
 public void DoSomething(string value)
 {
     ArgumentNullException.ThrowIfNull(value);
-    // o
+    // or
     if (value == null) throw new ArgumentNullException(nameof(value));
 }
 ```
 
-#### LINQ y Modern C#
+#### LINQ and Modern C#
 
 ```csharp
-// Preferir LINQ
+// Prefer LINQ
 var enabled = elements.Where(e => e.IsEnabled).ToList();
 
-// Usar pattern matching
+// Use pattern matching
 if (element is Button button)
 {
     button.Click();
 }
 
 // String interpolation
-Log.Information("Elemento {Name} tiene estado {State}", element.Name, element.State);
+Log.Information("Element {Name} has state {State}", element.Name, element.State);
 ```
 
-### Convenciones de Tests
+### Test Conventions
 
 ```csharp
 [TestFixture]
 [Category("Smoke")]
-[AllureSuite("Feature Tests")]
+[Description("Tests for feature X")]
 public class FeatureTests : BaseTest
 {
-    // Test name: Descriptivo y específico
+    // Test name: Descriptive and specific
     [Test]
-    [AllureTag("tag1", "tag2")]
-    [AllureDescription("Descripción detallada de qué verifica el test")]
+    [Category("Smoke")]
+    [Description("Detailed description of what the test verifies")]
     public void VerifyFeature_WithCondition_ExpectedResult()
     {
-        // Arrange: Preparar datos y estado
+        // Arrange: Prepare data and state
         var page = new FeaturePage(MainWindow!);
         var testData = "test value";
         
-        // Act: Ejecutar acción
+        // Act: Execute action
         page.DoSomething(testData);
         
-        // Assert: Verificar resultado
+        // Assert: Verify result
         Assert.That(page.GetResult(), Is.EqualTo("expected"));
+        
+        // Log to ExtentReports
+        ExtentReportManager.LogPass("Feature verified successfully");
     }
 }
 ```
@@ -244,262 +249,283 @@ public class FeatureTests : BaseTest
 ```csharp
 public class MyPage : BasePage
 {
-    // AutomationIds: constantes privadas
+    // AutomationIds: private constants
     private const string ElementId = "ElementAutomationId";
     
     public MyPage(Window window) : base(window)
     {
-        AllureApi.Step("Navegando a MyPage");
+        Log.Information("Navigating to MyPage");
     }
     
-    // Acciones: verbos públicos
+    // Actions: public verbs
     public void DoAction()
     {
-        AllureApi.Step("Ejecutando acción");
+        Log.Information("Executing action");
         var element = FindElement(ElementId);
         element.Click();
     }
     
-    // Getters: retornar valores, no elementos
+    // Getters: return values, not elements
     public string GetResult()
     {
         var element = FindElement(ElementId);
         return element.GetText();
     }
     
-    // No exponer AutomationElements directamente
+    // Don't expose AutomationElements directly
     // ❌ public AutomationElement GetElement() { }
 }
 ```
 
-## Añadir Nuevas Funcionalidades
+### Language Standards
 
-### Nuevo Helper
+**IMPORTANT**: All code, documentation, and comments must be in **English only**.
 
-**1. Crear archivo en `src/Hipos.Framework/Utils/`:**
+✅ **DO:**
+- Write all code comments in English
+- Write all documentation in English
+- Use English in log messages
+- Use English in test descriptions
+
+❌ **DON'T:**
+- Mix Spanish and English in the same file
+- Write comments in Spanish
+- Use Spanish variable names or method names
+
+**Exception**: UI element names in tests may be in Spanish/English for compatibility with localized Windows applications (e.g., "Calculadora" or "Calculator").
+
+## Add New Features
+
+### New Helper
+
+**1. Create file in `src/Hipos.Framework/Utils/`:**
 
 ```csharp
 namespace Hipos.Framework.Utils;
 
 /// <summary>
-/// Helper para operaciones de drag & drop.
+/// Helper for drag & drop operations.
 /// </summary>
 public static class DragDropHelper
 {
     /// <summary>
-    /// Realiza drag & drop entre dos elementos.
+    /// Performs drag & drop between two elements.
     /// </summary>
     public static void DragAndDrop(
         AutomationElement source,
         AutomationElement target)
     {
-        // Implementación
+        // Implementation
     }
 }
 ```
 
-**2. Añadir tests:**
+**2. Add tests:**
 
 ```csharp
-// En Hipos.Tests/Tests/
+// In Hipos.Tests/Tests/
 [TestFixture]
 public class DragDropHelperTests : BaseTest
 {
     [Test]
     public void VerifyDragDrop_BetweenElements_Success()
     {
-        // Test aquí
+        // Test here
     }
 }
 ```
 
-**3. Actualizar documentación:**
+**3. Update documentation:**
 
-Añadir sección en `website/docs/framework-guide.md`:
+Add section in `website/docs/framework-guide.md`:
 
 ```markdown
 ## DragDropHelper
 
-Helper para operaciones drag & drop...
+Helper for drag & drop operations...
 ```
 
-### Nuevo Page Object
+### New Page Object
 
-**1. Crear en `src/Hipos.Tests/PageObjects/`:**
+**1. Create in `src/Hipos.Tests/PageObjects/`:**
 
 ```csharp
 public class NewPage : BasePage
 {
-    // Implementación
+    // Implementation
 }
 ```
 
-**2. Crear tests que usen el Page Object**
+**2. Create tests that use the Page Object**
 
-**3. Documentar en `framework-guide.md`**
+**3. Document in `framework-guide.md`**
 
-### Nuevo Test Suite
+### New Test Suite
 
-**1. Crear en `src/Hipos.Tests/Tests/`:**
+**1. Create in `src/Hipos.Tests/Tests/`:**
 
 ```csharp
 [TestFixture]
 [Category("NewCategory")]
-[AllureSuite("New Feature Tests")]
+[Description("Tests for new feature")]
 public class NewFeatureTests : BaseTest
 {
-    // Tests aquí
+    // Tests here
 }
 ```
 
-**2. Ejecutar y verificar:**
+**2. Run and verify:**
 
 ```bash
 dotnet test --filter "Category=NewCategory"
 ```
 
-## Actualizar Documentación
+## Update Documentation
 
-### Documentación del Framework (Docusaurus)
+### Framework Documentation (Docusaurus)
 
-**Ubicación:** `website/docs/`
+**Location:** `website/docs/`
 
-**Añadir nueva página:**
+**Add new page:**
 
-1. Crear archivo markdown: `website/docs/mi-nueva-pagina.md`
+1. Create markdown file: `website/docs/my-new-page.md`
 
 ```markdown
 ---
 sidebar_position: 9
 ---
 
-# Mi Nueva Página
+# My New Page
 
-Contenido aquí...
+Content here...
 ```
 
-2. Actualizar sidebar: `website/sidebars.ts`
+2. Update sidebar: `website/sidebars.ts`
 
 ```typescript
 {
   type: 'doc',
-  id: 'mi-nueva-pagina',
-  label: 'Mi Nueva Página',
+  id: 'my-new-page',
+  label: 'My New Page',
 }
 ```
 
-3. Previsualizar localmente:
+3. Preview locally:
 
 ```bash
 cd website
 npm install
 npm start
-# Abrir http://localhost:3000
+# Open http://localhost:3000
 ```
 
-### Diagramas Mermaid
+### Mermaid Diagrams
 
-Docusaurus soporta Mermaid para diagramas:
+Docusaurus supports Mermaid for diagrams:
 
-```markdown
+````markdown
 ```mermaid
 graph LR
-    A[Inicio] --> B[Proceso]
-    B --> C[Fin]
-``` 
+    A[Start] --> B[Process]
+    B --> C[End]
 ```
+````
 
-**Tipos de diagramas:**
-- `graph` / `flowchart` - Diagramas de flujo
-- `sequenceDiagram` - Diagramas de secuencia
-- `classDiagram` - Diagramas de clases
-- `stateDiagram` - Diagramas de estado
+**Diagram types:**
+- `graph` / `flowchart` - Flow diagrams
+- `sequenceDiagram` - Sequence diagrams
+- `classDiagram` - Class diagrams
+- `stateDiagram` - State diagrams
 
-### README y Documentación In-Code
+### README and In-Code Documentation
 
-- **README.md**: Mantener actualizado con cambios principales
-- **XML Comments**: Documentar APIs públicas
-- **Inline comments**: Solo cuando código no es auto-explicativo
+- **README.md**: Keep updated with major changes
+- **XML Comments**: Document public APIs
+- **Inline comments**: Only when code is not self-explanatory
 
-## Checklist Pre-PR
+## Pre-PR Checklist
 
-Antes de crear Pull Request, verifica:
+Before creating Pull Request, verify:
 
-- [ ] Código compila sin warnings
-- [ ] Tests pasan localmente (`dotnet test`)
-- [ ] Nuevas funcionalidades tienen tests
-- [ ] Documentación actualizada
-- [ ] Commits siguen convención
-- [ ] Sin archivos innecesarios (bin/, obj/, logs/)
-- [ ] Código sigue guías de estilo
-- [ ] XML comments en APIs públicas nuevas
+- [ ] Code compiles without warnings
+- [ ] Tests pass locally (`dotnet test`)
+- [ ] New features have tests
+- [ ] Documentation updated
+- [ ] Commits follow convention
+- [ ] No unnecessary files (bin/, obj/, logs/)
+- [ ] Code follows style guides
+- [ ] XML comments on new public APIs
+- [ ] All content in English (no Spanish)
 
-## Proceso de Review
+## Review Process
 
-1. **Automated Checks**: CI ejecuta automáticamente
+1. **Automated Checks**: CI runs automatically
    - Build
    - Tests
-   - Linting (si configurado)
+   - Linting (if configured)
 
-2. **Code Review**: Mantenedor revisa:
-   - Calidad de código
-   - Cobertura de tests
-   - Documentación
-   - Adherencia a guías
+2. **Code Review**: Maintainer reviews:
+   - Code quality
+   - Test coverage
+   - Documentation
+   - Adherence to guides
 
-3. **Feedback**: Puede solicitar cambios
-   - Responde en la conversación del PR
-   - Haz commits adicionales con cambios
-   - Push actualiza PR automáticamente
+3. **Feedback**: May request changes
+   - Respond in PR conversation
+   - Make additional commits with changes
+   - Push updates PR automatically
 
-4. **Approval**: Una vez aprobado
-   - Mantenedor hace merge
-   - Branch puede ser eliminado
+4. **Approval**: Once approved
+   - Maintainer merges
+   - Branch can be deleted
 
-## Código de Conducta
+## Code of Conduct
 
-- 🤝 Sé respetuoso y profesional
-- 💬 Proporciona feedback constructivo
-- 🧠 Mantén mente abierta
-- 🎯 Enfócate en el código, no en la persona
-- 📚 Ayuda a otros a aprender
+- 🤝 Be respectful and professional
+- 💬 Provide constructive feedback
+- 🧠 Keep an open mind
+- 🎯 Focus on the code, not the person
+- 📚 Help others learn
 
-## Mejoras Futuras
+## Future Improvements
 
-Ideas de contribuciones que serían valiosas:
+Valuable contribution ideas:
 
 ### Framework
-- [ ] Soporte para drag & drop
-- [ ] Helpers para manejo de grids/tablas
-- [ ] Soporte para multiple windows simultáneas
-- [ ] Video recording de tests
-- [ ] Parallel execution (con múltiples runners)
+- [ ] Support for drag & drop
+- [ ] Helpers for grid/table handling
+- [ ] Support for multiple simultaneous windows
+- [ ] Video recording of tests
+- [ ] Parallel execution (with multiple runners)
 
-### Documentación
-- [ ] Videos tutoriales
-- [ ] Más ejemplos en docs
-- [ ] Traducción a inglés completa
-- [ ] Guía de migración desde Coded UI
+### Documentation
+- [ ] Tutorial videos
+- [ ] More examples in docs
+- [ ] Migration guide from Coded UI
+- [ ] Best practices guide
 
 ### CI/CD
-- [ ] Guía detallada de Azure DevOps
-- [ ] Ejemplo de Jenkins pipeline
+- [ ] Detailed Azure DevOps guide
+- [ ] Jenkins pipeline example
 - [ ] Docker support (experimental)
+- [ ] Xray upload automation examples
 
 ### Testing
-- [ ] Más tests del framework mismo
+- [ ] More tests of the framework itself
 - [ ] Performance benchmarks
-- [ ] Tests de integración end-to-end
+- [ ] End-to-end integration tests
 
-## Recursos
+## Resources
 
 - [C# Coding Conventions](https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
 - [FlaUI Documentation](https://github.com/FlaUI/FlaUI)
 - [NUnit Documentation](https://docs.nunit.org/)
+- [SpecFlow Documentation](https://docs.specflow.org/)
+- [ExtentReports Documentation](https://www.extentreports.com/)
 - [Conventional Commits](https://www.conventionalcommits.org/)
 
-## Contacto
+## Contact
 
-¿Preguntas? Abre un issue o discusión en GitHub.
+Questions? Open an issue or discussion on GitHub.
 
-¡Gracias por contribuir! 🎉
+Thank you for contributing! 🎉

@@ -2,18 +2,17 @@
 sidebar_position: 3
 ---
 
-# Arquitectura
+# Architecture
 
-Esta página explica la arquitectura del framework Hipos, sus componentes principales y cómo interactúan entre sí.
+This page explains the Hipos framework architecture, its main components, and how they interact.
 
-## Diagrama de Alto Nivel
+## High-Level Diagram
 
 ```mermaid
 graph TB
     subgraph Tests[Test Layer]
-        CT[CalculatorTests<br/>11 tests total]
-        DT[Demo Tests<br/>4 basic]
-        CXT[Complex Tests<br/>7 advanced]
+        UT[Unit Tests - NUnit<br/>11 traditional tests]
+        BDD[BDD Tests - SpecFlow<br/>11 Gherkin scenarios]
     end
     
     subgraph PageObjects[Page Object Layer]
@@ -24,17 +23,20 @@ graph TB
     subgraph Framework[Framework Layer]
         AL[AppLauncher<br/>Hybrid Search]
         BT[BaseTest<br/>OneTimeSetUp TearDown]
+        TH[TestHooks<br/>SpecFlow Lifecycle]
         WH[WaitHelper<br/>Explicit waits]
         EW[ElementWrapper<br/>Simplified API]
         SH[ScreenshotHelper<br/>Auto capture]
         CM[ConfigManager<br/>appsettings env]
         RP[RetryPolicy<br/>Transient errors]
+        CJ[CucumberJsonReportGenerator<br/>Xray Integration]
     end
     
     subgraph External[External Libraries]
         FlaUI[FlaUI UIA3<br/>v4.0]
         NUnit[NUnit<br/>v4.2]
-        Allure[Allure<br/>v2.12]
+        SpecFlow[SpecFlow<br/>v4.0]
+        ExtentReports[ExtentReports<br/>v5.0]
         Serilog[Serilog<br/>v3.1]
     end
     
@@ -44,72 +46,91 @@ graph TB
         CustomApp[Your App<br/>customizable]
     end
     
-    CT --> CP
-    DT --> CP
-    CXT --> CP
+    UT --> CP
+    BDD --> CP
     CP --> BP
     BP --> WH
     BP --> EW
-    CT --> BT
+    UT --> BT
+    BDD --> TH
     BT --> AL
+    TH --> AL
     BT --> SH
     BT --> CM
+    TH --> CM
+    TH --> CJ
     AL -->|"Strict (5s)"| FlaUI
     AL -->|"Relaxed (10s)"| FlaUI
     WH --> FlaUI
     EW --> FlaUI
     BT --> NUnit
-    BT --> Allure
-    BT --> Serilog
+    TH --> SpecFlow
+    TH --> ExtentReports
+    TH --> Serilog
     EW --> RP
     AL --> CalcApp
     AL --> NotepadApp
     AL --> CustomApp
 ```
 
-## Capas del Framework
+## Framework Layers
 
-### 1. Test Layer (Capa de Tests)
+### 1. Test Layer
 
-**Responsabilidad:** Definir casos de test y aserciones.
+**Responsibility:** Define test cases and assertions.
 
-**Componentes:**
-- `CalculatorTests.cs` - 11 tests contra Calculadora de Windows
-  - 4 tests básicos (`Category=Demo`): Verificación de apertura y UI
-  - 7 tests complejos (`Category=Complex`): Operaciones matemáticas reales
+**Components:**
+- `CalculatorTests.cs` - 11 traditional NUnit tests against Windows Calculator
+  - 4 basic tests (`Category=Demo`): Open and UI verification
+  - 7 complex tests (`Category=Complex`): Real mathematical operations
+- `Calculadora.feature` - 11 BDD scenarios in Gherkin format
+  - Uses SpecFlow step definitions
+  - Generates Cucumber JSON for Jira/Xray
 
-**Características:**
-- Hereda de `BaseTest` para obtener hooks automáticos
-- Usa `CalculatorPage` para interaccionar con botones y display
-- Incluye tags de Allure (`[AllureTag]`, `[AllureSeverity]`)
-- Implementa patrón Arrange-Act-Assert (AAA)
-- Tests complejos realizan operaciones reales: suma, resta, multiplicación, división, operaciones secuenciales
+**Features:**
+- Inherits from `BaseTest` or uses `BaseStepDefinitions` for automatic hooks
+- Uses `CalculatorPage` to interact with buttons and display
+- Includes ExtentReports logging
+- Implements Arrange-Act-Assert (AAA) pattern
+- Complex tests perform real operations: addition, subtraction, multiplication, division, sequential operations
 
-**Ejemplo:**
+**Example (NUnit):**
+
 ```csharp
 [Test]
 [Category("Smoke")]
-[AllureTag("critical")]
-public void VerifyMainWindowOpens()
+[Description("Verifies calculator opens correctly")]
+public void VerifyCalculatorOpens()
 {
     // Arrange
-    var mainWindowPage = new MainWindowPage(MainWindow!);
+    var calculatorPage = new CalculatorPage(MainWindow!);
     
     // Act & Assert
-    Assert.That(mainWindowPage.IsVisible(), Is.True);
+    Assert.That(MainWindow.Title, Does.Contain("Calculator").Or.Contains("Calculadora"));
+    ExtentReportManager.LogPass("Calculator opened successfully");
 }
+```
+
+**Example (SpecFlow):**
+
+```gherkin
+@Calculator @Smoke
+Scenario: Verify that the Calculator opens correctly
+  Given the calculator is open
+  When I verify the window title
+  Then the title should contain "Calculator" or "Calculadora"
 ```
 
 ### 2. Page Object Layer
 
-**Responsabilidad:** Encapsular elementos UI y acciones de cada página/ventana.
+**Responsibility:** Encapsulate UI elements and actions for each page/window.
 
-**Componentes:**
-- `BasePage.cs` - Clase base con funcionalidad común
-- `MainWindowPage.cs` - Página para sección de texto
-- `CalculatorPage.cs` - Página para sección de calculadora
+**Components:**
+- `BasePage.cs` - Base class with common functionality
+- `CalculatorPage.cs` - Page for calculator operations
 
-**Patrón Page Object:**
+**Page Object Pattern:**
+
 ```mermaid
 classDiagram
     class BasePage {
@@ -120,39 +141,35 @@ classDiagram
         +WaitForElementVisible(automationId) bool
     }
     
-    class MainWindowPage {
-        +EnterText(text) void
-        +ClickSubmit() void
-        +GetResult() string
-        +IsVisible() bool
-    }
-    
     class CalculatorPage {
-        +EnterNumbers(num1, num2) void
-        +SelectOperation(operation) void
-        +ClickCalculate() void
-        +GetCalculationResult() string
-        +PerformCalculation(num1, num2, op) string
+        +ClickNumber(num) void
+        +ClickPlus() void
+        +ClickMinus() void
+        +ClickMultiply() void
+        +ClickDivide() void
+        +ClickEquals() void
+        +ClickClear() void
+        +GetDisplayValue() string
+        +PerformOperation(num1, op, num2) void
     }
     
-    BasePage <|-- MainWindowPage
     BasePage <|-- CalculatorPage
 ```
 
-**Ventajas:**
-- ✅ Reduce duplicación de código
-- ✅ Facilita mantenimiento (cambios en UI solo afectan Page Object)
-- ✅ Mejora legibilidad de tests
-- ✅ Permite reutilización de acciones comunes
+**Advantages:**
+- ✅ Reduces code duplication
+- ✅ Facilitates maintenance (UI changes only affect Page Object)
+- ✅ Improves test readability
+- ✅ Allows reuse of common actions
 
 ### 3. Framework Layer (Core)
 
-**Responsabilidad:** Proporcionar funcionalidad base para automation.
+**Responsibility:** Provide base functionality for automation.
 
 #### AppLauncher (Singleton)
-- Lanza y cierra aplicaciones
-- Mantiene referencia a la ventana principal
-- Maneja timeouts y errores de inicio
+- Launches and closes applications
+- Maintains reference to main window
+- Handles timeouts and startup errors
 
 ```mermaid
 sequenceDiagram
@@ -171,52 +188,65 @@ sequenceDiagram
 ```
 
 #### BaseTest
-- Proporciona hooks SetUp/TearDown
-- Configura Serilog y Allure
-- Captura screenshots en fallos
-- Adjunta evidencias al reporte
+- Provides SetUp/TearDown hooks for NUnit tests
+- Configures Serilog and ExtentReports
+- Captures screenshots on failures
+- Attaches evidence to report
 
-**Flujo de Ejecución:**
+#### TestHooks
+- Provides lifecycle hooks for SpecFlow scenarios
+- Configures Serilog, ExtentReports, and CucumberJsonReportGenerator
+- Captures screenshots on scenario failures
+- Tracks feature/scenario/step execution
+- Generates Cucumber JSON for Jira/Xray
+
+**Execution Flow:**
+
 ```mermaid
 sequenceDiagram
-    participant NUnit
-    participant BaseTest
+    participant NUnit/SpecFlow
+    participant BaseTest/TestHooks
     participant AppLauncher
     participant Test
-    participant Allure
+    participant ExtentReports
+    participant CucumberJson
     
-    NUnit->>BaseTest: [SetUp]
-    BaseTest->>AppLauncher: LaunchApp()
-    AppLauncher-->>BaseTest: MainWindow
-    BaseTest->>Test: Execute test
+    NUnit/SpecFlow->>BaseTest/TestHooks: [BeforeTestRun/OneTimeSetUp]
+    BaseTest/TestHooks->>AppLauncher: LaunchApp()
+    AppLauncher-->>BaseTest/TestHooks: MainWindow
+    BaseTest/TestHooks->>Test: Execute test
     alt Test Failed
-        Test-->>BaseTest: Exception
-        BaseTest->>BaseTest: TakeScreenshot()
-        BaseTest->>Allure: AddAttachment()
+        Test-->>BaseTest/TestHooks: Exception
+        BaseTest/TestHooks->>BaseTest/TestHooks: TakeScreenshot()
+        BaseTest/TestHooks->>ExtentReports: AttachScreenshot()
+        BaseTest/TestHooks->>CucumberJson: RecordFailure()
     end
-    BaseTest->>AppLauncher: CloseApp()
-    BaseTest->>NUnit: [TearDown]
+    BaseTest/TestHooks->>AppLauncher: CloseApp()
+    BaseTest/TestHooks->>ExtentReports: Flush()
+    BaseTest/TestHooks->>CucumberJson: GenerateReport()
+    BaseTest/TestHooks->>NUnit/SpecFlow: [AfterTestRun/OneTimeTearDown]
 ```
 
 #### WaitHelper
-- Esperas explícitas con retry
-- Polling configurable
-- Logging de intentos
-- Condiciones customizables
+- Explicit waits with retry
+- Configurable polling
+- Attempt logging
+- Customizable conditions
 
-**Métodos principales:**
-- `WaitUntil(condition, timeout)` - Espera genérica
-- `WaitForElement(parent, automationId, timeout)` - Espera elemento
-- `WaitForWindowTitle(title, timeout)` - Espera ventana
-- `WaitForElementEnabled(element, timeout)` - Espera habilitación
+**Main Methods:**
+- `WaitUntil(condition, timeout)` - Generic wait
+- `WaitForElement(parent, automationId, timeout)` - Wait for element
+- `WaitForWindowTitle(title, timeout)` - Wait for window
+- `WaitForElementEnabled(element, timeout)` - Wait for enable
 
 #### ElementWrapper
-- API simplificada sobre AutomationElement
-- Esperas implícitas antes de acciones
-- Logging automático de interacciones
-- Manejo robusto de errores
+- Simplified API over AutomationElement
+- Implicit waits before actions
+- Automatic interaction logging
+- Robust error handling
 
-**Flujo Click:**
+**Click Flow:**
+
 ```mermaid
 sequenceDiagram
     participant Test
@@ -241,62 +271,75 @@ sequenceDiagram
 ```
 
 #### ScreenshotHelper
-- Captura de pantalla con FlaUI
-- Guardado automático en allure-results/
-- Fallback a pantalla completa si no hay ventana
-- Sanitización de nombres de archivo
+- Screenshot capture with FlaUI
+- Automatic save to reports/screenshots/
+- Fallback to full screen if no window
+- Filename sanitization
 
 #### ConfigManager (Singleton)
-- Lectura de appsettings.json
-- Soporte para múltiples ambientes (Development, Production)
-- Variables de entorno sobrescriben valores
-- Propiedades tipadas para acceso fácil
+- Reads appsettings.json
+- Support for multiple environments (Development, Production)
+- Environment variables override values
+- Typed properties for easy access
+
+#### CucumberJsonReportGenerator
+- Converts SpecFlow results to Cucumber JSON format
+- Compatible with Jira/Xray import
+- Tracks features, scenarios, steps
+- Records execution status, duration, errors
+- Optional screenshot embedding
 
 ### 4. External Libraries
 
 #### FlaUI (UIA3)
-- **UI Automation 3.0** - Última versión de Microsoft UI Automation
-- Soporte para Win32, WPF, WinForms, UWP
-- Mejor rendimiento que UIA2
-- API fluida y moderna
+- **UI Automation 3.0** - Latest version of Microsoft UI Automation
+- Support for Win32, WPF, WinForms, UWP
+- Better performance than UIA2
+- Modern fluent API
 
 #### NUnit
-- Framework de testing maduro
-- Atributos para categorización
-- Test fixtures y setup/teardown
-- Asserts expresivos
+- Mature testing framework
+- Attributes for categorization
+- Test fixtures and setup/teardown
+- Expressive asserts
 
-#### Allure
-- Reportes HTML interactivos
-- Screenshots y adjuntos
-- Categorización con tags
-- Trends y estadísticas
+#### SpecFlow
+- BDD framework for .NET
+- Gherkin syntax support
+- Given-When-Then scenarios
+- Integration with NUnit
+
+#### ExtentReports
+- Interactive HTML reports
+- Screenshots and attachments
+- Categorization with tags
+- Dark theme
 
 #### Serilog
-- Logging estructurado
-- Múltiples sinks (file, console, etc.)
-- Niveles configurables
-- Performance óptimo
+- Structured logging
+- Multiple sinks (file, console, etc.)
+- Configurable levels
+- Optimal performance
 
-## Patrones de Diseño
+## Design Patterns
 
 ### Singleton Pattern
-- `AppLauncher` - Una sola instancia para toda la suite
-- `ConfigManager` - Configuración centralizada
+- `AppLauncher` - Single instance for entire suite
+- `ConfigManager` - Centralized configuration
 
 ### Page Object Pattern
-- Encapsulación de elementos y acciones
-- Separación de concerns
-- Mantenibilidad
+- Encapsulation of elements and actions
+- Separation of concerns
+- Maintainability
 
-### Factory Pattern (implícito)
-- `AppLauncher.LaunchApp()` actúa como factory para Window
+### Factory Pattern (implicit)
+- `AppLauncher.LaunchApp()` acts as factory for Window
 
 ### Wrapper Pattern
-- `ElementWrapper` envuelve `AutomationElement`
-- Añade funcionalidad sin modificar la clase original
+- `ElementWrapper` wraps `AutomationElement`
+- Adds functionality without modifying original class
 
-## Flujo Completo de un Test
+## Complete Test Flow
 
 ```mermaid
 sequenceDiagram
@@ -322,13 +365,13 @@ sequenceDiagram
     Framework-->>BaseTest: Window ready
     
     NUnit->>Test: Execute test
-    Test->>PageObject: EnterText("test")
-    PageObject->>Framework: FindElement("InputTextBox")
+    Test->>PageObject: ClickNumber(5)
+    PageObject->>Framework: FindElement("Number5")
     Framework->>FlaUI: FindFirstDescendant()
     FlaUI-->>Framework: Element
     Framework-->>PageObject: ElementWrapper
-    PageObject->>Framework: SetText("test")
-    Framework->>FlaUI: AsTextBox().Text = "test"
+    PageObject->>Framework: Click()
+    Framework->>FlaUI: AsButton().Click()
     
     Test->>Test: Assert.That(...)
     
@@ -338,7 +381,7 @@ sequenceDiagram
         Framework->>FlaUI: Capture.Window()
         FlaUI-->>Framework: Image
         Framework-->>BaseTest: Screenshot path
-        BaseTest->>BaseTest: Allure.AddAttachment()
+        BaseTest->>BaseTest: ExtentReports.AttachScreenshot()
     end
     
     NUnit->>BaseTest: [TearDown]
@@ -349,45 +392,47 @@ sequenceDiagram
     BaseTest->>BaseTest: Log.CloseAndFlush()
 ```
 
-## Principios de Diseño
+## Design Principles
 
 ### SOLID
 
-- **Single Responsibility**: Cada clase tiene una responsabilidad única
-- **Open/Closed**: Extensible mediante herencia (BaseTest, BasePage)
-- **Liskov Substitution**: Page Objects son intercambiables
-- **Interface Segregation**: Interfaces pequeñas y específicas
-- **Dependency Inversion**: Dependencia en abstracciones (IConfiguration)
+- **Single Responsibility**: Each class has a single responsibility
+- **Open/Closed**: Extensible through inheritance (BaseTest, BasePage)
+- **Liskov Substitution**: Page Objects are interchangeable
+- **Interface Segregation**: Small and specific interfaces
+- **Dependency Inversion**: Dependency on abstractions (IConfiguration)
 
 ### DRY (Don't Repeat Yourself)
-- Helpers y wrappers evitan código duplicado
-- BaseTest y BasePage centralizan lógica común
+- Helpers and wrappers avoid duplicate code
+- BaseTest and BasePage centralize common logic
 
 ### KISS (Keep It Simple)
-- API clara y fácil de usar
-- Convenciones sobre configuración
-- Defaults sensibles
+- Clear and easy-to-use API
+- Convention over configuration
+- Sensible defaults
 
 ### Separation of Concerns
-- Tests no conocen detalles de FlaUI
-- Page Objects no conocen detalles de Allure
-- Framework proporciona abstracciones
+- Tests don't know FlaUI details
+- Page Objects don't know ExtentReports details
+- Framework provides abstractions
 
-## Extensibilidad
+## Extensibility
 
-El framework está diseñado para ser fácilmente extensible:
+The framework is designed to be easily extensible:
 
-### Añadir Nuevo Page Object
+### Add New Page Object
+
 ```csharp
 public class NewPage : BasePage
 {
     public NewPage(Window window) : base(window) { }
     
-    // Tu lógica aquí
+    // Your logic here
 }
 ```
 
-### Añadir Nuevo Helper
+### Add New Helper
+
 ```csharp
 public static class CustomHelper
 {
@@ -396,6 +441,7 @@ public static class CustomHelper
 ```
 
 ### Custom Configuration
+
 ```json
 {
   "CustomSetting": "value"
@@ -406,8 +452,8 @@ public static class CustomHelper
 var customValue = ConfigManager.Instance.GetValue("CustomSetting", "default");
 ```
 
-## Próximos Pasos
+## Next Steps
 
-- **[Framework Guide](./framework-guide.md)** - Uso detallado de cada componente
-- **[Reporting](./reporting-logging.md)** - Configuración de reportes
-- **[CI/CD](./ci-cd.md)** - Integración continua
+- **[Framework Guide](./framework-guide.md)** - Detailed usage of each component
+- **[Reporting & Logging](./reporting-logging.md)** - Report configuration
+- **[CI/CD](./ci-cd.md)** - Continuous integration

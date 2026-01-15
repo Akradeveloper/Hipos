@@ -2,105 +2,116 @@
 sidebar_position: 1
 ---
 
-# Introducción
+# Introduction
 
-Bienvenido a la documentación de **Hipos** - un framework enterprise de automatización para aplicaciones Windows.
+Welcome to the **Hipos** documentation - an enterprise-grade automation framework for Windows applications.
 
-## ¿Qué es Hipos?
+## What is Hipos?
 
-Hipos es un framework completo de automatización de UI para aplicaciones Windows (Win32, WPF, WinForms) construido con las mejores prácticas de la industria. Combina tecnologías modernas con patrones de diseño probados para proporcionar una solución robusta y mantenible.
+Hipos is a complete UI automation framework for Windows applications (Win32, WPF, WinForms) built with industry best practices. It combines modern technologies with proven design patterns to provide a robust and maintainable solution.
 
-## Características Principales
+## Key Features
 
-### 🎯 Automatización Robusta
-- **FlaUI con UIA3**: Tecnología de automatización UI de última generación
-- **Búsqueda Híbrida**: Sistema inteligente que detecta ventanas UWP y Win32 clásicas
-- **Esperas Inteligentes**: Sistema de waits explícitas con retry configurable
-- **Manejo de Errores**: Captura automática de screenshots y logs en caso de fallos
-- **Tests Complejos**: Interacciones reales con aplicaciones (clicks, inputs, validaciones)
+### 🎯 Robust Automation
+- **FlaUI with UIA3**: State-of-the-art UI automation technology
+- **Hybrid Search**: Intelligent system that detects both UWP and classic Win32 windows
+- **Smart Waits**: Explicit wait system with configurable retry
+- **Error Handling**: Automatic screenshot capture and logs on test failures
+- **Complex Tests**: Real application interactions (clicks, inputs, validations)
+- **BDD Support**: SpecFlow integration for behavior-driven development
 
-### 📊 Reporting Profesional
-- **Allure Reports**: Reportes HTML interactivos y visuales
-- **Screenshots Automáticos**: Captura de evidencia al fallar cualquier test
-- **Logs Detallados**: Serilog con diferentes niveles y formato configurable
-- **Artifacts para CI**: Exportación de resultados para integración continua
+### 📊 Professional Reporting
+- **ExtentReports 5**: Interactive and visual HTML reports with dark theme
+- **Cucumber JSON**: Compatible with Jira/Xray for test management integration
+- **Automatic Screenshots**: Evidence capture on any test failure
+- **Detailed Logs**: Serilog with different levels and configurable format
+- **CI Artifacts**: Result export for continuous integration
 
-### ⚙️ Listo para Enterprise
-- **Page Object Pattern**: Separación clara de lógica de test y elementos UI
-- **Configuración Flexible**: appsettings.json + variables de entorno
-- **Categorización**: Tests de smoke, regression, y custom tags
-- **CI/CD Ready**: Workflows para GitHub Actions y guía de Azure DevOps
+### ⚙️ Enterprise Ready
+- **Page Object Pattern**: Clear separation of test logic and UI elements
+- **Flexible Configuration**: appsettings.json + environment variables
+- **Categorization**: Smoke, regression, and custom tag tests
+- **CI/CD Ready**: Workflows for GitHub Actions and Azure DevOps guide
 
 ### 🔧 Developer Friendly
-- **C# + .NET 8**: Lenguaje moderno y tipado fuerte
-- **NUnit**: Framework de testing maduro y ampliamente adoptado
-- **Documentación Completa**: Portal Docusaurus con ejemplos y guías
-- **Código Limpio**: Helpers, wrappers y utilidades bien organizadas
+- **C# + .NET 8**: Modern language with strong typing
+- **NUnit + SpecFlow**: Mature and widely adopted testing frameworks
+- **Complete Documentation**: Docusaurus portal with examples and guides
+- **Clean Code**: Well-organized helpers, wrappers and utilities
+- **English Codebase**: All code, comments, and tests in English
 
-## Stack Tecnológico
+## Technology Stack
 
 ```mermaid
 graph LR
-    Tests[Tests NUnit] --> PageObjects[Page Objects]
+    Tests[NUnit/SpecFlow Tests] --> PageObjects[Page Objects]
     PageObjects --> Framework[Hipos.Framework]
     Framework --> FlaUI[FlaUI UIA3]
-    Tests --> Allure[Allure Reports]
+    Tests --> ExtentReports[ExtentReports 5]
+    Tests --> CucumberJSON[Cucumber JSON]
+    CucumberJSON --> Xray[Jira/Xray]
     Framework --> Serilog[Serilog Logs]
     Tests --> CI[GitHub Actions]
 ```
 
-| Componente | Tecnología | Versión |
-|------------|-----------|---------|
-| Lenguaje | C# | .NET 9 |
+| Component | Technology | Version |
+|-----------|-----------|---------|
+| Language | C# | .NET 8 |
 | Test Runner | NUnit | 4.2+ |
+| BDD Framework | SpecFlow | 4.0+ |
 | UI Automation | FlaUI | 4.0+ |
-| Reporting | Allure | 2.12+ |
+| HTML Reporting | ExtentReports | 5.0+ |
+| JSON Reporting | Cucumber JSON | - |
+| Test Management | Jira/Xray | - |
 | Logging | Serilog | 3.1+ |
 | CI/CD | GitHub Actions | - |
 
-## Estado del Proyecto
+## Project Status
 
-✅ **Production-Ready** - Framework completamente funcional
+✅ **Production-Ready** - Fully functional framework
 
-**Tests Actuales:**
-- 11 tests automatizados (4 básicos + 7 complejos)
-- Tests contra Calculadora de Windows
-- Operaciones matemáticas completas (suma, resta, multiplicación, división)
-- Operaciones secuenciales encadenadas
-- Validaciones de UI y funcionalidad
+**Current Tests:**
+- 22 automated tests (11 NUnit + 11 SpecFlow)
+- Tests against Windows Calculator
+- Complete mathematical operations (addition, subtraction, multiplication, division)
+- Chained sequential operations
+- UI and functionality validations
 
-**Tiempo de Ejecución:**
-- Tests básicos: ~35ms
-- Tests complejos: ~16-25s
-- Tasa de éxito: 100%
+**Execution Time:**
+- Basic tests: ~500ms
+- Complex tests: ~16-25s
+- Success rate: 100%
 
-## Casos de Uso
+## Use Cases
 
-Hipos es ideal para:
+Hipos is ideal for:
 
-- ✅ Automatización de aplicaciones desktop legacy (Win32, WinForms)
-- ✅ Testing de aplicaciones WPF modernas
-- ✅ Regression testing de aplicaciones Windows empresariales
-- ✅ Smoke tests en pipelines de CI/CD
-- ✅ Validación de integración entre componentes UI
-- ✅ Testing de aplicaciones con UI compleja (grids, trees, custom controls)
+- ✅ Legacy desktop application automation (Win32, WinForms)
+- ✅ Modern WPF application testing
+- ✅ Regression testing of enterprise Windows applications
+- ✅ Smoke tests in CI/CD pipelines
+- ✅ Integration validation between UI components
+- ✅ Testing applications with complex UI (grids, trees, custom controls)
+- ✅ BDD scenarios for business-readable test cases
+- ✅ Test management integration with Jira/Xray
 
-## ¿Por qué Hipos?
+## Why Hipos?
 
 ### vs. Coded UI (deprecated)
-Coded UI está deprecado desde Visual Studio 2019. Hipos usa FlaUI, una librería activamente mantenida y moderna.
+Coded UI has been deprecated since Visual Studio 2019. Hipos uses FlaUI, an actively maintained and modern library.
 
 ### vs. WinAppDriver
-WinAppDriver requiere que la app sea instrumentada y tiene limitaciones con controles custom. FlaUI/UIA3 funciona con cualquier aplicación Windows estándar.
+WinAppDriver requires the app to be instrumented and has limitations with custom controls. FlaUI/UIA3 works with any standard Windows application.
 
-### vs. Scripting manual
-Hipos proporciona estructura, patrones, helpers y toda la infraestructura lista (reporting, logging, CI/CD).
+### vs. Manual Scripting
+Hipos provides structure, patterns, helpers and all the infrastructure ready (reporting, logging, CI/CD, test management integration).
 
-## Próximos Pasos
+## Next Steps
 
-1. **[Getting Started](./getting-started.md)** - Configura tu entorno e instala Hipos
-2. **[Arquitectura](./architecture.md)** - Entiende la estructura del framework
-3. **[Framework Guide](./framework-guide.md)** - Aprende a usar los componentes principales
-4. **[CI/CD](./ci-cd.md)** - Integra con tus pipelines
+1. **[Getting Started](./getting-started.md)** - Set up your environment and install Hipos
+2. **[Architecture](./architecture.md)** - Understand the framework structure
+3. **[Framework Guide](./framework-guide.md)** - Learn to use the main components
+4. **[Reporting & Logging](./reporting-logging.md)** - Configure reports and Jira/Xray integration
+5. **[CI/CD](./ci-cd.md)** - Integrate with your pipelines
 
-¿Listo para empezar? 👉 [Getting Started](./getting-started.md)
+Ready to start? 👉 [Getting Started](./getting-started.md)
