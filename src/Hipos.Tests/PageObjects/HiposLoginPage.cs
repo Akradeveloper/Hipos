@@ -10,7 +10,7 @@ namespace Hipos.Tests.PageObjects;
 /// </summary>
 public class HiposLoginPage : BasePage
 {
-    private const string EmployeeId = "Employee";
+    private const string EmployeeId = "input";
     private const string PasswordId = "password";
     private const string OkButtonId = "ok";
     private const string DataCtrlId = "datactrl";
