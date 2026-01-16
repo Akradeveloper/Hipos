@@ -10,7 +10,8 @@ namespace Hipos.Tests.PageObjects;
 /// </summary>
 public class HiposLoginPage : BasePage
 {
-    private const string EmployeeId = "input";
+    private const string EmployeePaneId = "employee";
+    private const string EmployeeInputId = "input";
     private const string PasswordId = "password";
     private const string OkButtonId = "ok";
     private const string DataCtrlId = "datactrl";
@@ -25,7 +26,7 @@ public class HiposLoginPage : BasePage
         Log.Information("Ingresando employee: {Employee}", employee);
         ExtentReportManager.LogInfo($"Ingresando employee: {employee}");
 
-        var employeeInput = FindElement(EmployeeId);
+        var employeeInput = FindEmployeeInput();
         employeeInput.SetText(employee);
 
         Keyboard.Type(FlaUI.Core.WindowsAPI.VirtualKeyShort.TAB);
@@ -74,5 +75,24 @@ public class HiposLoginPage : BasePage
     public bool IsDataCtrlPresent()
     {
         return ElementExists(DataCtrlId);
+    }
+
+    private ElementWrapper FindEmployeeInput()
+    {
+        var employeePane = WaitHelper.WaitForElement(Window, EmployeePaneId, DefaultTimeout);
+        if (employeePane == null)
+        {
+            throw new InvalidOperationException(
+                $"No se encontró el contenedor de employee con AutomationId: {EmployeePaneId}");
+        }
+
+        var input = WaitHelper.WaitForElement(employeePane, EmployeeInputId, DefaultTimeout);
+        if (input == null)
+        {
+            throw new InvalidOperationException(
+                $"No se encontró el input de employee con AutomationId: {EmployeeInputId}");
+        }
+
+        return new ElementWrapper(input, DefaultTimeout);
     }
 }
