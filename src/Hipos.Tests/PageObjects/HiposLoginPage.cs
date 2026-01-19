@@ -6,15 +6,16 @@ using Serilog;
 namespace Hipos.Tests.PageObjects;
 
 /// <summary>
-/// Page Object para el login inicial de HIPOS.
+/// Page Object para el login inicial de HIPOS usando MSAA.
 /// </summary>
 public class HiposLoginPage : BasePage
 {
+    private const string SignonPaneId = "signon";
+    private const string DataCtrlId = "datactrl";
     private const string EmployeePaneId = "employee";
     private const string EmployeeInputId = "input";
     private const string PasswordId = "password";
     private const string OkButtonId = "ok";
-    private const string DataCtrlId = "datactrl";
 
     public HiposLoginPage(Window window) : base(window)
     {
@@ -42,7 +43,7 @@ public class HiposLoginPage : BasePage
         Log.Information("Ingresando password");
         ExtentReportManager.LogInfo("Ingresando password");
 
-        var passwordInput = FindElement(PasswordId);
+        var passwordInput = FindPasswordInput();
         passwordInput.SetText(password);
     }
 
@@ -51,7 +52,7 @@ public class HiposLoginPage : BasePage
         Log.Information("Click en botón OK");
         ExtentReportManager.LogInfo("Click en botón OK");
 
-        var okButton = FindElement(OkButtonId);
+        var okButton = FindOkButton();
         okButton.Click();
     }
 
@@ -66,33 +67,49 @@ public class HiposLoginPage : BasePage
     public bool WaitForDataCtrlToDisappear(int? timeoutMs = null)
     {
         var timeout = timeoutMs ?? DefaultTimeout;
+        var windowHandle = GetWindowHandle();
         return WaitHelper.WaitUntil(
-            () => !ElementExists(DataCtrlId),
+            () => !MsaaHelper.ExistsByNamePath(windowHandle, SignonPaneId, DataCtrlId),
             timeout,
             conditionDescription: "datactrl desaparezca");
     }
 
     public bool IsDataCtrlPresent()
     {
-        return ElementExists(DataCtrlId);
+        var windowHandle = GetWindowHandle();
+        return MsaaHelper.ExistsByNamePath(windowHandle, SignonPaneId, DataCtrlId);
     }
 
-    private ElementWrapper FindEmployeeInput()
+    private MsaaHelper.MsaaElement FindEmployeeInput()
     {
-        var employeePane = WaitHelper.WaitForElement(Window, EmployeePaneId, DefaultTimeout);
-        if (employeePane == null)
+        var windowHandle = GetWindowHandle();
+        return MsaaHelper.FindByNamePath(
+            windowHandle,
+            SignonPaneId,
+            DataCtrlId,
+            EmployeePaneId,
+            EmployeeInputId);
+    }
+
+    private MsaaHelper.MsaaElement FindPasswordInput()
+    {
+        var windowHandle = GetWindowHandle();
+        return MsaaHelper.FindByNamePath(windowHandle, SignonPaneId, DataCtrlId, PasswordId);
+    }
+
+    private MsaaHelper.MsaaElement FindOkButton()
+    {
+        var windowHandle = GetWindowHandle();
+        return MsaaHelper.FindByNamePath(windowHandle, SignonPaneId, DataCtrlId, OkButtonId);
+    }
+
+    private IntPtr GetWindowHandle()
+    {
+        if (!Window.Properties.NativeWindowHandle.IsSupported)
         {
-            throw new InvalidOperationException(
-                $"No se encontró el contenedor de employee con AutomationId: {EmployeePaneId}");
+            throw new InvalidOperationException("El handle nativo de la ventana no está disponible.");
         }
 
-        var input = WaitHelper.WaitForElement(employeePane, EmployeeInputId, DefaultTimeout);
-        if (input == null)
-        {
-            throw new InvalidOperationException(
-                $"No se encontró el input de employee con AutomationId: {EmployeeInputId}");
-        }
-
-        return new ElementWrapper(input, DefaultTimeout);
+        return Window.Properties.NativeWindowHandle.Value;
     }
 }

@@ -2,6 +2,7 @@ using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 using Serilog;
+using System.Diagnostics;
 
 namespace Hipos.Framework.Core;
 
@@ -49,13 +50,20 @@ public class AppLauncher
 
         try
         {
-            _application = Application.Launch(exePath);
-            var processId = _application.ProcessId;
-            
-            Log.Information("Proceso lanzado con PID: {ProcessId}", processId);
+            var attached = TryAttachToRunningProcess(exePath, out var processId);
+            if (!attached)
+            {
+                _application = Application.Launch(exePath);
+                processId = _application.ProcessId;
+                Log.Information("Proceso lanzado con PID: {ProcessId}", processId);
+            }
+            else
+            {
+                Log.Information("Adjuntado a proceso existente con PID: {ProcessId}", processId);
+            }
             
             // Dar tiempo al proceso para inicializarse
-            Thread.Sleep(1500);
+            Thread.Sleep(attached ? 500 : 1500);
             
             // Variables para búsqueda híbrida
             var startTime = DateTime.Now;
@@ -220,6 +228,36 @@ public class AppLauncher
         {
             Log.Error(ex, "Error al lanzar aplicación: {ExePath}", exePath);
             throw;
+        }
+    }
+
+    private bool TryAttachToRunningProcess(string exePath, out int processId)
+    {
+        processId = 0;
+
+        try
+        {
+            var processName = Path.GetFileNameWithoutExtension(exePath);
+            if (string.IsNullOrWhiteSpace(processName))
+            {
+                return false;
+            }
+
+            var processes = Process.GetProcessesByName(processName);
+            var process = processes.FirstOrDefault(p => !p.HasExited);
+            if (process == null)
+            {
+                return false;
+            }
+
+            processId = process.Id;
+            _application = Application.Attach(processId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "No se pudo adjuntar a proceso existente: {ExePath}", exePath);
+            return false;
         }
     }
 
