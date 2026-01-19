@@ -123,7 +123,7 @@ Hipos/
 ├── src/
 │   ├── Hipos.Framework/        # Framework core
 │   │   ├── Core/               # AppLauncher, ScreenshotHelper
-│   │   ├── Utils/              # WaitHelper, ElementWrapper, MsaaHelper
+│   │   ├── Utils/              # WaitHelper, MsaaHelper
 │   │   │                       # ExtentReportManager, CucumberJsonReportGenerator
 │   │   └── Config/             # ConfigManager
 │   └── Hipos.Tests/            # Tests and Page Objects

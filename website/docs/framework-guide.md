@@ -161,60 +161,17 @@ if (!success)
 }
 ```
 
-### WaitForElement
-
-```csharp
-// Wait for element to appear
-var element = WaitHelper.WaitForElement(
-    parent: MainWindow,
-    automationId: "SubmitButton",
-    timeoutMs: 5000
-);
-
-if (element == null)
-{
-    // Element not found
-}
-```
-
-### WaitForWindowTitle
-
-```csharp
-// Wait for window with specific title
-bool found = WaitHelper.WaitForWindowTitle(
-    title: "Settings",
-    timeoutMs: 3000
-);
-```
-
-### WaitForElementEnabled
-
-```csharp
-// Wait for element to be enabled
-bool enabled = WaitHelper.WaitForElementEnabled(
-    element: button,
-    timeoutMs: 5000
-);
-```
-
-### WaitForElementClickable
-
-```csharp
-// Wait for element to be clickable (enabled + visible)
-bool clickable = WaitHelper.WaitForElementClickable(
-    element: button,
-    timeoutMs: 5000
-);
-```
-
 ### Best Practices
 
 ✅ **DO:**
 
 ```csharp
-// Explicit wait
-WaitHelper.WaitForElement(window, "ButtonId", 5000);
-button.Click();
+// Explicit wait with custom condition
+WaitHelper.WaitUntil(
+    () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 5000,
+    conditionDescription: "button exists");
+ClickElement("Parent", "Button");
 ```
 
 ❌ **DON'T:**
@@ -222,101 +179,94 @@ button.Click();
 ```csharp
 // Hardcoded sleep
 Thread.Sleep(2000);
-button.Click();
+ClickElement("Parent", "Button");
 ```
 
-## ElementWrapper
+## BasePage MSAA Methods
 
-Wrapper over `AutomationElement` that adds implicit waits and logging.
+`BasePage` provides MSAA-based methods for interacting with elements using name paths.
 
-### Create Wrapper
+### Finding Elements
 
 ```csharp
-var element = WaitHelper.WaitForElement(window, "InputTextBox", 5000);
-var wrapper = new ElementWrapper(element, defaultTimeout: 5000);
+// Find element by name path
+var element = FindElementByPath("Parent", "Child", "Button");
+
+// Check if element exists
+bool exists = ElementExistsByPath("Parent", "Button");
 ```
 
-### Methods
-
-#### Click()
+### Interacting with Elements
 
 ```csharp
-wrapper.Click();
-// Automatic wait until clickable
-// Automatic action logging
+// Click on element
+ClickElement("Parent", "Child", "Button");
+
+// Set text on element
+SetElementText("Hello World", "Parent", "TextBox");
+
+// Wait for element to disappear
+bool disappeared = WaitForElementToDisappear(
+    new[] { "Parent", "LoadingIndicator" }, 
+    timeoutMs: 5000);
 ```
 
-#### SetText()
+### Parsing Name Paths
 
 ```csharp
-wrapper.SetText("Hello World");
-// Clears existing text (Ctrl+A, Delete)
-// Sets new text
-// Automatic logging
-```
-
-#### GetText()
-
-```csharp
-string text = wrapper.GetText();
-// Attempts multiple ways to get text:
-// 1. Text Pattern
-// 2. Value Pattern
-// 3. Name property
-```
-
-#### IsEnabled()
-
-```csharp
-bool enabled = wrapper.IsEnabled();
-```
-
-#### IsVisible()
-
-```csharp
-bool visible = wrapper.IsVisible();
-// Verifies it's not offscreen
-```
-
-#### WaitUntilExists()
-
-```csharp
-bool exists = wrapper.WaitUntilExists(timeoutMs: 3000);
-```
-
-### Access to Original Element
-
-```csharp
-AutomationElement original = wrapper.Element;
-// For advanced cases where you need FlaUI's full API
+// Parse configuration path string
+string[] path = ParseNamePath("Parent > Child > Button");
+// Returns: ["Parent", "Child", "Button"]
 ```
 
 ## Page Objects
 
 ### BasePage
 
-Base class for all Page Objects.
+Base class for all Page Objects. Uses MSAA for element interactions.
 
 ```csharp
 public abstract class BasePage
 {
-    protected Window Window { get; }
+    protected Window Window { get; }  // FlaUI Window for handle and focus
+    protected IntPtr WindowHandle { get; }  // Native handle for MSAA
     protected int DefaultTimeout { get; }
     
-    protected ElementWrapper FindElement(string automationId)
+    // MSAA methods
+    protected MsaaHelper.MsaaElement FindElementByPath(params string[] namePath)
     {
-        // Searches for element with automatic wait
+        // Finds MSAA element by name path
         // Throws exception if not found
     }
     
-    protected bool ElementExists(string automationId)
+    protected bool ElementExistsByPath(params string[] namePath)
     {
-        // Verifies existence without throwing exception
+        // Verifies MSAA element existence without throwing exception
     }
     
-    protected bool WaitForElementVisible(string automationId, int? timeoutMs = null)
+    protected void ClickElement(params string[] namePath)
     {
-        // Waits until element is visible
+        // Clicks on MSAA element by name path
+    }
+    
+    protected void SetElementText(string text, params string[] namePath)
+    {
+        // Sets text on MSAA element by name path
+    }
+    
+    protected bool WaitForElementToDisappear(string[] namePath, int? timeoutMs = null)
+    {
+        // Waits until MSAA element disappears
+    }
+    
+    protected static string[] ParseNamePath(string rawPath)
+    {
+        // Parses configuration path string into array
+    }
+    
+    protected void EnsureWindowInForeground()
+    {
+        // Brings window to foreground using FlaUI
     }
 }
 ```
@@ -326,26 +276,43 @@ public abstract class BasePage
 ```csharp
 public class HiposLoginPage : BasePage
 {
+    private readonly string[] _employeePath;
+    private readonly string[] _passwordPath;
+    private readonly string[] _loginButtonPath;
+    private readonly string[] _dataCtrlPath;
+
     public HiposLoginPage(Window window) : base(window)
     {
-        Log.Information("Initializing HIPOS login page");
+        var config = ConfigManager.Instance;
+        _employeePath = ParseNamePath(config.GetValue("Msaa:Login:EmployeeNamePath", "employee"));
+        _passwordPath = ParseNamePath(config.GetValue("Msaa:Login:PasswordNamePath", "password"));
+        _loginButtonPath = ParseNamePath(config.GetValue("Msaa:Login:LoginButtonNamePath", "login"));
+        _dataCtrlPath = ParseNamePath(config.GetValue("Msaa:Login:DataCtrlNamePath", "datactrl"));
     }
 
     public void Login(string employee, string password)
     {
-        // Uses MsaaHelper with configured name paths
-        // to set employee/password and click login.
+        EnsureWindowInForeground();
+        SetElementText(employee, _employeePath);
+        SetElementText(password, _passwordPath);
+        ClickElement(_loginButtonPath);
+    }
+    
+    public bool WaitForDataCtrlToDisappear()
+    {
+        return WaitForElementToDisappear(_dataCtrlPath);
     }
 }
 ```
 
 ### Conventions
 
-1. **AutomationIds as constants**: Easy to find and change
+1. **Name paths in configuration**: Centralize selectors in appsettings.json
 2. **Public methods only**: Don't expose elements directly
 3. **Naming**: Verbs for actions (`Click`, `Enter`, `Select`)
 4. **ExtentReports Logging**: Document important actions
 5. **Return values**: Only for verifications, not elements
+6. **MSAA for interactions**: Use BasePage MSAA methods for all element interactions
 
 ## ConfigManager
 

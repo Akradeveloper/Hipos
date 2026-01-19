@@ -110,31 +110,39 @@ C:\Program Files (x86)\Windows Kits\10\bin\<version>\x64\inspect.exe
 ✅ **Solution:** Increase timeout or add specific wait
 
 ```csharp
-// Increase timeout
-var element = WaitHelper.WaitForElement(window, "ButtonId", timeoutMs: 10000);
+// Wait for element to exist with MSAA
+WaitHelper.WaitUntil(
+    () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 10000,
+    conditionDescription: "button exists");
 
 // Or wait for specific condition
 WaitHelper.WaitUntil(
-    () => element != null && element.IsEnabled,
+    () => {
+        var element = FindElementByPath("Parent", "Button");
+        return element != null;
+    },
     timeoutMs: 5000,
-    conditionDescription: "button enabled"
-);
+    conditionDescription: "button available");
 ```
 
 #### 3. Element in Popup/Modal
 
-✅ **Solution:** Wait for popup to appear first
+✅ **Solution:** Wait for popup to appear first, then interact with MSAA
 
 ```csharp
-// Wait for popup
-WaitHelper.WaitForWindowTitle("Settings", 5000);
-
-// Search in all windows
+// Wait for popup window using FlaUI
+var automation = AppLauncher.Instance.Automation;
 var allWindows = automation.GetDesktop().FindAllChildren();
 var popup = allWindows.FirstOrDefault(w => w.Name == "Settings");
 
-// Search element in popup
-var element = WaitHelper.WaitForElement(popup, "OkButton", 5000);
+if (popup != null)
+{
+    var popupHandle = popup.Properties.NativeWindowHandle.Value;
+    // Interact with elements in popup using MSAA
+    var okButton = MsaaHelper.FindByNamePath(popupHandle, "OkButton");
+    okButton?.Click();
+}
 ```
 
 #### 4. Application Uses Non-Standard UI Framework
@@ -163,8 +171,11 @@ var result = GetResult();
 
 ✅ **Solution:**
 ```csharp
-button.Click();
-WaitHelper.WaitForElement(window, "ResultLabel", 5000);
+ClickElement("Parent", "Button");
+WaitHelper.WaitUntil(
+    () => ElementExistsByPath("Parent", "ResultLabel"),
+    timeoutMs: 5000,
+    conditionDescription: "result label appears");
 var result = GetResult();
 ```
 
@@ -179,12 +190,13 @@ ClickLogin();  // Click before text is fully entered
 
 ✅ **Solution:**
 ```csharp
-EnterText("user");
-Thread.Sleep(100);  // Small delay to process
-EnterPassword("pass");
-Thread.Sleep(100);
-WaitHelper.WaitForElementEnabled(loginButton, 5000);
-ClickLogin();
+SetElementText("user", "Parent", "Username");
+SetElementText("pass", "Parent", "Password");
+WaitHelper.WaitUntil(
+    () => ElementExistsByPath("Parent", "LoginButton"),
+    timeoutMs: 5000,
+    conditionDescription: "login button available");
+ClickElement("Parent", "LoginButton");
 ```
 
 #### 3. Residual State from Previous Test
@@ -309,8 +321,7 @@ Mouse.Click(new Point(100, 200));  // Absolute coordinates
 
 ✅ **Do this:**
 ```csharp
-var button = FindElement("ButtonId");
-button.Click();  // Click relative to element
+ClickElement("Parent", "ButtonId");  // Click using MSAA name path
 ```
 
 ✅ **Solution 2:** Configure fixed resolution in CI
@@ -388,7 +399,10 @@ Thread.Sleep(5000);  // Always waits 5 seconds
 
 ✅ **Solution:**
 ```csharp
-WaitHelper.WaitForElement(window, "ButtonId", 5000);
+WaitHelper.WaitUntil(
+    () => ElementExistsByPath("Parent", "ButtonId"),
+    timeoutMs: 5000,
+    conditionDescription: "button found");
 // Returns immediately when element is found
 ```
 
@@ -541,7 +555,7 @@ echo $AppPath
 **Answer:** 99% of the time it's due to **insufficient or incorrect waits**.
 
 - ❌ Don't use hardcoded `Thread.Sleep()`
-- ✅ Use `WaitHelper.WaitForElement()` and variants
+- ✅ Use `WaitHelper.WaitUntil()` with MSAA conditions
 - ✅ Wait for specific conditions, not arbitrary times
 
 ### Can I run tests in parallel?

@@ -12,7 +12,7 @@ Thank you for your interest in contributing to Hipos! This document explains how
 
 Found a bug? Open an issue on GitHub with:
 
-1. **Descriptive title**: "ElementWrapper.SetText fails with ComboBox"
+1. **Descriptive title**: "BasePage.SetElementText fails with ComboBox"
 2. **Detailed description**:
    - What you expected to happen
    - What actually happened
@@ -24,8 +24,7 @@ Found a bug? Open an issue on GitHub with:
 4. **Sample code**:
 
 ```csharp
-var element = FindElement("ComboBoxId");
-element.SetText("value");  // Throws exception here
+SetElementText("value", "Parent", "ComboBoxId");  // Throws exception here
 ```
 
 5. **Logs/Screenshots**: If possible
@@ -261,15 +260,14 @@ public class MyPage : BasePage
     public void DoAction()
     {
         Log.Information("Executing action");
-        var element = FindElement(ElementId);
-        element.Click();
+        ClickElement("Parent", ElementId);
     }
     
     // Getters: return values, not elements
     public string GetResult()
     {
-        var element = FindElement(ElementId);
-        return element.GetText();
+        var element = FindElementByPath("Parent", ElementId);
+        return element.GetName() ?? string.Empty;
     }
     
     // Don't expose AutomationElements directly

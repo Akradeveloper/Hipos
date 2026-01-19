@@ -24,7 +24,6 @@ graph TB
         AL[AppLauncher]
         TH[TestHooks]
         WH[WaitHelper]
-        EW[ElementWrapper]
         SH[ScreenshotHelper]
         CM[ConfigManager]
         MH[MsaaHelper]
@@ -48,7 +47,7 @@ graph TB
     BDD --> HP
     HP --> BP
     BP --> WH
-    BP --> EW
+    BP --> MH
     BDD --> TH
     TH --> AL
     TH --> SH
@@ -56,8 +55,6 @@ graph TB
     TH --> CJ
     HP --> MH
     AL --> FlaUI
-    WH --> FlaUI
-    EW --> FlaUI
     TH --> SpecFlow
     TH --> ExtentReports
     TH --> Serilog
@@ -106,10 +103,14 @@ Feature: HIPOS login
 classDiagram
     class BasePage {
         #Window Window
+        #IntPtr WindowHandle
         #int DefaultTimeout
-        +FindElement(automationId) ElementWrapper
-        +ElementExists(automationId) bool
-        +WaitForElementVisible(automationId) bool
+        +FindElementByPath(namePath) MsaaElement
+        +ElementExistsByPath(namePath) bool
+        +ClickElement(namePath) void
+        +SetElementText(text, namePath) void
+        +WaitForElementToDisappear(namePath) bool
+        +ParseNamePath(rawPath) string[]
     }
     
     class HiposLoginPage {
@@ -192,40 +193,27 @@ sequenceDiagram
 - Customizable conditions
 
 **Main Methods:**
-- `WaitUntil(condition, timeout)` - Generic wait
-- `WaitForElement(parent, automationId, timeout)` - Wait for element
-- `WaitForWindowTitle(title, timeout)` - Wait for window
-- `WaitForElementEnabled(element, timeout)` - Wait for enable
+- `WaitUntil(condition, timeout)` - Generic wait for any condition
 
-#### ElementWrapper
-- Simplified API over AutomationElement
-- Implicit waits before actions
-- Automatic interaction logging
-- Robust error handling
-
-**Click Flow:**
+**MSAA Interaction Flow:**
 
 ```mermaid
 sequenceDiagram
     participant Test
-    participant Wrapper
-    participant WaitHelper
-    participant FlaUI
+    participant BasePage
+    participant MsaaHelper
+    participant MSAA
     
-    Test->>Wrapper: Click()
-    Wrapper->>WaitHelper: WaitForElementClickable()
-    loop Every 500ms
-        WaitHelper->>FlaUI: IsEnabled && !IsOffscreen?
-        alt Ready
-            FlaUI-->>WaitHelper: true
-        else Not Ready
-            FlaUI-->>WaitHelper: false
-        end
-    end
-    WaitHelper-->>Wrapper: Element ready
-    Wrapper->>FlaUI: Click()
-    FlaUI-->>Wrapper: Clicked
-    Wrapper-->>Test: Success
+    Test->>BasePage: ClickElement("Parent", "Button")
+    BasePage->>MsaaHelper: FindByNamePath(handle, path)
+    MsaaHelper->>MSAA: IAccessible navigation
+    MSAA-->>MsaaHelper: Element found
+    MsaaHelper-->>BasePage: MsaaElement
+    BasePage->>MsaaHelper: MsaaElement.Click()
+    MsaaHelper->>MSAA: accDoDefaultAction()
+    MSAA-->>MsaaHelper: Action executed
+    MsaaHelper-->>BasePage: Success
+    BasePage-->>Test: Success
 ```
 
 #### ScreenshotHelper
@@ -294,8 +282,8 @@ sequenceDiagram
 - `AppLauncher.LaunchApp()` acts as factory for Window
 
 ### Wrapper Pattern
-- `ElementWrapper` wraps `AutomationElement`
-- Adds functionality without modifying original class
+- `BasePage` wraps MSAA interactions
+- Provides simplified API for MSAA element operations
 
 ## Complete Test Flow
 
