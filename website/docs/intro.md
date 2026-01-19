@@ -16,6 +16,7 @@ Hipos is a complete UI automation framework for Windows applications (Win32, WPF
 - **FlaUI with UIA3**: State-of-the-art UI automation technology
 - **Hybrid Search**: Intelligent system that detects both UWP and classic Win32 windows
 - **Smart Waits**: Explicit wait system with configurable retry
+- **MSAA Integration**: Accessibility-based interactions for legacy controls
 - **Error Handling**: Automatic screenshot capture and logs on test failures
 - **Complex Tests**: Real application interactions (clicks, inputs, validations)
 - **BDD Support**: SpecFlow integration for behavior-driven development
@@ -38,7 +39,7 @@ Hipos is a complete UI automation framework for Windows applications (Win32, WPF
 - **NUnit + SpecFlow**: Mature and widely adopted testing frameworks
 - **Complete Documentation**: Docusaurus portal with examples and guides
 - **Clean Code**: Well-organized helpers, wrappers and utilities
-- **English Codebase**: All code, comments, and tests in English
+- **MSAA Support**: Accessibility-based interactions for legacy controls
 
 ## Technology Stack
 
@@ -71,11 +72,9 @@ graph LR
 ✅ **Production-Ready** - Fully functional framework
 
 **Current Tests:**
-- 22 automated tests (11 NUnit + 11 SpecFlow)
-- Tests against Windows Calculator
-- Complete mathematical operations (addition, subtraction, multiplication, division)
-- Chained sequential operations
-- UI and functionality validations
+- SpecFlow scenarios for HIPOS login
+- MSAA-based interactions for critical login controls
+- UI validation after authentication
 
 **Execution Time:**
 - Basic tests: ~500ms

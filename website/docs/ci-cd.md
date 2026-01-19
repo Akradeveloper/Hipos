@@ -450,16 +450,16 @@ $uri = "https://xray.cloud.getxray.app/api/v2/import/execution/cucumber?testEnvi
 SpecFlow tags are automatically mapped to Xray:
 
 ```gherkin
-@Calculator @Smoke @PROJ-123
-Feature: Windows Calculator
+@Hipos @Smoke @PROJ-123
+Feature: HIPOS login
   As a user
-  I want to use the Windows Calculator
+  I want to login to HIPOS
   
   @PROJ-124
-  Scenario: Simple addition
-    Given the calculator is open
-    When I perform the operation "2 + 3"
-    Then the result should be "5"
+  Scenario: Successful login hides datactrl
+    Given the HIPOS login page is open
+    When I login with employee "-1" and password "000000"
+    Then the datactrl element should not exist
 ```
 
 - `@PROJ-123`: Links feature to Jira issue

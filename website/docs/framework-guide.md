@@ -17,7 +17,7 @@ Detailed guide for using the Hipos framework components.
 var launcher = AppLauncher.Instance;
 
 // Launch application
-var mainWindow = launcher.LaunchApp("calc.exe", timeoutMs: 15000);
+var mainWindow = launcher.LaunchApp("C:\\hiposAut.exe", timeoutMs: 15000);
 
 // Get main window at any time
 var window = launcher.MainWindow;
@@ -36,7 +36,7 @@ launcher.CloseApp();
 
 ### Hybrid Window Search ⭐
 
-A key feature that supports modern UWP apps (Calculator) and classic Win32 apps (Notepad):
+A key feature that supports modern UWP apps and classic Win32 apps:
 
 #### Phase 1: Strict Mode (first 5 seconds)
 
@@ -56,8 +56,7 @@ if (windowProcessId != processId) {
 
 ```csharp
 // Search by window title if strict mode failed
-if (window.Title.Contains("Calculadora") || 
-    window.Title.Contains("Calculator")) {
+if (window.Title.Contains("HIPOS")) {
     // ✅ Found
 }
 ```
@@ -70,10 +69,10 @@ if (window.Title.Contains("Calculadora") ||
 #### Log Example
 
 ```
-[00:00.000] Launching application: calc.exe
+[00:00.000] Launching application: C:\hiposAut.exe
 [00:00.100] Process launched with PID: 38092
 [00:05.000] ⚠️ Switching to relaxed search mode (by window title)
-[00:05.500] ✓ Window found: 'Calculadora' (PID: 38124, Mode: Relaxed)
+[00:05.500] ✓ Window found: 'HIPOS' (PID: 38124, Mode: Relaxed)
 ```
 
 ### Configuration
@@ -82,7 +81,7 @@ The application path is configured in `appsettings.json`:
 
 ```json
 {
-  "AppPath": "calc.exe",           // System apps: name only
+  "AppPath": "C:\\hiposAut.exe",
   "DefaultTimeout": 15000          // 15s for UWP apps
 }
 ```
@@ -90,8 +89,8 @@ The application path is configured in `appsettings.json`:
 **AppPath examples:**
 
 ```json
-// Windows Calculator (UWP)
-"AppPath": "calc.exe"
+// HIPOS (recommended)
+"AppPath": "C:\\hiposAut.exe"
 
 // Notepad (Win32)
 "AppPath": "notepad.exe"
@@ -100,76 +99,46 @@ The application path is configured in `appsettings.json`:
 "AppPath": "C:\\MyApp\\bin\\Debug\\MyApp.exe"
 ```
 
-## BaseTest
+## MSAA Helper
 
-Base class for all your tests. Provides automatic hooks.
+`MsaaHelper` provides Microsoft Active Accessibility (MSAA) interactions for legacy controls or applications where UIA is not enough.
 
-### Usage
+### Basic Usage
 
 ```csharp
-public class MyTests : BaseTest
+var handle = mainWindow.Properties.NativeWindowHandle.Value;
+var employee = MsaaHelper.FindByName(handle, "employee");
+employee?.SetText("user123");
+
+var loginButton = MsaaHelper.FindByName(handle, "login");
+loginButton?.Click();
+```
+
+### Name Paths
+
+You can search by name path to traverse nested containers:
+
+```csharp
+var element = MsaaHelper.FindByNamePath(handle, "LoginPanel", "employee");
+```
+
+### Configuration for MSAA
+
+Define name paths in `appsettings.json` to keep selectors centralized:
+
+```json
 {
-    [Test]
-    public void MyTest()
-    {
-        // MainWindow is already available
-        var page = new CalculatorPage(MainWindow!);
-        
-        // Your test logic here
+  "Msaa": {
+    "SearchMaxDepth": 6,
+    "Login": {
+      "EmployeeNamePath": "LoginPanel > employee",
+      "PasswordNamePath": "LoginPanel > password",
+      "LoginButtonNamePath": "LoginPanel > login",
+      "DataCtrlNamePath": "datactrl"
     }
+  }
 }
 ```
-
-### Automatic Hooks
-
-#### `[OneTimeSetUp]` - Once per fixture
-1. Configures Serilog
-2. Initializes ConfigManager
-3. **Launches application ONCE**
-4. Provides `MainWindow` for all tests
-
-**Advantage:** App does NOT open/close between tests → **much faster tests**
-
-#### `[SetUp]` - Before each test
-1. Log test start
-2. Create Page Object instance if needed
-
-#### `[TearDown]` - After each test
-1. If test failed:
-   - Automatically capture screenshot
-   - Attach to ExtentReports report
-2. Log test completion
-
-#### `[OneTimeTearDown]` - Once at the end
-1. **Close application**
-2. Attach full logs
-3. Close Serilog
-
-### Migration from old SetUp/TearDown
-
-```csharp
-// ❌ Old (app opens/closes each test)
-[SetUp]
-public void SetUp() {
-    AppLauncher.Instance.LaunchApp(...);
-}
-
-[TearDown]
-public void TearDown() {
-    AppLauncher.Instance.CloseApp();
-}
-
-// ✅ New (app opens ONCE)
-// BaseTest already handles this automatically with OneTimeSetUp/TearDown
-```
-
-### Protected Property
-
-```csharp
-protected Window? MainWindow { get; private set; }
-```
-
-Use `MainWindow` in your tests to create Page Objects.
 
 ## WaitHelper
 
@@ -352,69 +321,20 @@ public abstract class BasePage
 }
 ```
 
-### Create Your Page Object
+### Create Your Page Object (MSAA)
 
 ```csharp
-public class LoginPage : BasePage
+public class HiposLoginPage : BasePage
 {
-    // AutomationIds (constants for easy maintenance)
-    private const string UsernameTextBoxId = "UsernameTextBox";
-    private const string PasswordTextBoxId = "PasswordTextBox";
-    private const string LoginButtonId = "LoginButton";
-    private const string ErrorMessageId = "ErrorMessage";
-    
-    public LoginPage(Window window) : base(window)
+    public HiposLoginPage(Window window) : base(window)
     {
-        Log.Information("Navigating to LoginPage");
-        ExtentReportManager.LogInfo("Navigating to LoginPage");
+        Log.Information("Initializing HIPOS login page");
     }
-    
-    // Atomic actions
-    public void EnterUsername(string username)
+
+    public void Login(string employee, string password)
     {
-        Log.Information("Entering username: {Username}", username);
-        ExtentReportManager.LogInfo($"Entering username: {username}");
-        var textBox = FindElement(UsernameTextBoxId);
-        textBox.SetText(username);
-    }
-    
-    public void EnterPassword(string password)
-    {
-        Log.Information("Entering password");
-        ExtentReportManager.LogInfo("Entering password");
-        var textBox = FindElement(PasswordTextBoxId);
-        textBox.SetText(password);
-    }
-    
-    public void ClickLogin()
-    {
-        Log.Information("Clicking Login");
-        ExtentReportManager.LogInfo("Clicking Login");
-        var button = FindElement(LoginButtonId);
-        button.Click();
-    }
-    
-    // Composed actions (fluent)
-    public void Login(string username, string password)
-    {
-        Log.Information("Login with user: {Username}", username);
-        ExtentReportManager.LogInfo($"Login with user: {username}");
-        EnterUsername(username);
-        EnterPassword(password);
-        ClickLogin();
-    }
-    
-    // Verifications
-    public string GetErrorMessage()
-    {
-        var label = FindElement(ErrorMessageId);
-        return label.GetText();
-    }
-    
-    public bool IsLoginButtonEnabled()
-    {
-        var button = FindElement(LoginButtonId);
-        return button.IsEnabled();
+        // Uses MsaaHelper with configured name paths
+        // to set employee/password and click login.
     }
 }
 ```
@@ -439,8 +359,6 @@ var config = ConfigManager.Instance;
 // Predefined properties
 string appPath = config.AppPath;
 int timeout = config.DefaultTimeout;
-int retries = config.RetryCount;
-string logLevel = config.LogLevel;
 
 // Custom values
 string customValue = config.GetValue("MyCustomKey", "defaultValue");
@@ -455,13 +373,21 @@ IConfigurationSection section = config.GetSection("MySection");
 {
   "AppPath": "path/to/app.exe",
   "DefaultTimeout": 5000,
-  "RetryCount": 3,
   "Serilog": {
     "MinimumLevel": "Information"
   },
   "Reporting": {
     "CucumberJsonPath": "reports/cucumber.json",
     "IncludeScreenshots": true
+  },
+  "Msaa": {
+    "SearchMaxDepth": 6,
+    "Login": {
+      "EmployeeNamePath": "employee",
+      "PasswordNamePath": "password",
+      "LoginButtonNamePath": "login",
+      "DataCtrlNamePath": "datactrl"
+    }
   },
   "MyCustomKey": "MyValue",
   "MySection": {
@@ -512,58 +438,7 @@ if (path != null && File.Exists(path))
 
 ### Used Automatically
 
-`BaseTest` automatically captures screenshots when a test fails, you don't need to call it manually.
-
-## RetryPolicy
-
-Retry policy for transient operations.
-
-### Usage
-
-```csharp
-// Action without return
-RetryPolicy.Execute(
-    action: () => button.Click(),
-    maxRetries: 3,
-    delayMs: 1000
-);
-
-// Function with return
-var result = RetryPolicy.Execute(
-    func: () => element.GetText(),
-    maxRetries: 3,
-    delayMs: 1000
-);
-```
-
-### Transient Errors (retryable)
-
-- `ElementNotAvailableException`
-- `TimeoutException`
-- `InvalidOperationException` with specific messages
-
-### Non-Transient Errors (NOT retryable)
-
-- **AssertionException**: Assert failures never retry
-- Other non-transient errors
-
-### Example
-
-```csharp
-// This will retry if element is temporarily unavailable
-RetryPolicy.Execute(() =>
-{
-    var element = FindElement("DynamicButton");
-    element.Click();
-}, maxRetries: 3);
-
-// This will NOT retry (assert failure)
-RetryPolicy.Execute(() =>
-{
-    var text = GetResult();
-    Assert.That(text, Is.EqualTo("Expected")); // If it fails, throws immediately
-});
-```
+`TestHooks` captures screenshots when a scenario fails, you don't need to call it manually.
 
 ## Naming Conventions
 
@@ -572,7 +447,7 @@ RetryPolicy.Execute(() =>
 - Descriptive: `SubmitButton`, `UsernameTextBox`, `ErrorMessage`
 
 ### Page Objects
-- Suffix `Page`: `LoginPage`, `CalculatorPage`
+- Suffix `Page`: `HiposLoginPage`
 - PascalCase
 
 ### Tests
@@ -584,67 +459,31 @@ RetryPolicy.Execute(() =>
 - Action verbs: `Click`, `Enter`, `Select`, `Get`, `Is`, `Wait`
 - PascalCase
 
-## Complete Example
+## Complete Example (SpecFlow)
 
 ```csharp
-[TestFixture]
-[Category("Smoke")]
-[Description("Tests for login functionality")]
-public class LoginTests : BaseTest
+[Binding]
+public class HiposLoginStepDefinitions : BaseStepDefinitions
 {
-    private LoginPage _loginPage = null!;
-    
-    [SetUp]
-    public void TestSetUp()
+    private HiposLoginPage? _loginPage;
+
+    [Given("the HIPOS login page is open")]
+    public void GivenTheHiposLoginPageIsOpen()
     {
-        // BaseTest.SetUp already launched the app
-        _loginPage = new LoginPage(MainWindow!);
-        ExtentReportManager.LogInfo($"Starting test: {TestContext.CurrentContext.Test.Name}");
+        Assert.That(MainWindow, Is.Not.Null, "HIPOS window should be available");
+        _loginPage = new HiposLoginPage(MainWindow!);
     }
-    
-    [Test]
-    [Category("Positive")]
-    [Description("Verifies successful login with valid credentials")]
-    public void VerifyLogin_WithValidCredentials_Success()
+
+    [When("I login with employee \"(.*)\" and password \"(.*)\"")]
+    public void WhenILoginWithEmployeeAndPassword(string employee, string password)
     {
-        // Arrange
-        var username = "testuser";
-        var password = "testpass";
-        
-        // Act
-        ExtentReportManager.LogInfo("Attempting to login");
-        _loginPage.Login(username, password);
-        
-        // Wait for dashboard
-        WaitHelper.WaitForWindowTitle("Dashboard", 5000);
-        
-        // Assert
-        Assert.That(MainWindow.Title, Does.Contain("Dashboard"));
-        ExtentReportManager.LogPass("Login successful - Dashboard displayed");
+        _loginPage!.Login(employee, password);
     }
-    
-    [Test]
-    [Category("Negative")]
-    [Description("Verifies error message with invalid credentials")]
-    public void VerifyLogin_WithInvalidCredentials_ShowsError()
+
+    [Then("the datactrl element should not exist")]
+    public void ThenTheDataCtrlElementShouldNotExist()
     {
-        // Arrange
-        var username = "invalid";
-        var password = "wrong";
-        
-        // Act
-        ExtentReportManager.LogInfo("Attempting to login with invalid credentials");
-        _loginPage.Login(username, password);
-        
-        // Wait for error
-        Thread.Sleep(500); // Or better: WaitForElementVisible("ErrorMessage")
-        
-        var errorMessage = _loginPage.GetErrorMessage();
-        ExtentReportManager.LogInfo($"Error message displayed: {errorMessage}");
-        
-        // Assert
-        Assert.That(errorMessage, Does.Contain("Invalid credentials"));
-        ExtentReportManager.LogPass("Error message verified successfully");
+        Assert.That(_loginPage!.WaitForDataCtrlToDisappear(), Is.True);
     }
 }
 ```

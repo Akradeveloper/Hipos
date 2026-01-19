@@ -39,8 +39,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <SpecFlowFeatureFiles Update="Features\Calculadora.feature" />
-  </ItemGroup>
-
 </Project>

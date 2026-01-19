@@ -110,34 +110,17 @@ ExtentReportManager.LogSkip("Test skipped due to...");
 
 ### Test Categories
 
-Use NUnit categories to organize tests:
-
-```csharp
-[TestFixture]
-[Category("Demo")]
-public class CalculatorTests : BaseTest
-{
-    [Test]
-    [Category("Smoke")]
-    [Description("Verifies calculator opens correctly")]
-    public void VerifyCalculatorOpens()
-    {
-        // test code
-    }
-}
-```
-
 SpecFlow tags are automatically converted to categories:
 
 ```gherkin
-@Calculator @Demo
-Feature: Windows Calculator
+@Hipos @Login
+Feature: HIPOS login
 
   @Smoke
-  Scenario: Verify calculator opens
-    Given the calculator is open
-    When I verify the window title
-    Then the title should contain "Calculator"
+  Scenario: Successful login hides datactrl
+    Given the HIPOS login page is open
+    When I login with employee "-1" and password "000000"
+    Then the datactrl element should not exist
 ```
 
 ## Cucumber JSON for Jira/Xray
@@ -181,25 +164,25 @@ The cucumber.json file contains:
 ```json
 [
   {
-    "id": "windows-calculator",
-    "name": "Windows Calculator",
+    "id": "hipos-login",
+    "name": "HIPOS login",
     "description": "As a user...",
     "keyword": "Feature",
-    "uri": "Features/Calculator.feature",
+    "uri": "Features/Login.feature",
     "tags": [
-      {"name": "@Calculator"},
-      {"name": "@Demo"}
+      {"name": "@Hipos"},
+      {"name": "@Login"}
     ],
     "elements": [
       {
-        "id": "windows-calculator;perform-addition",
-        "name": "Perform a simple addition",
+        "id": "hipos-login;successful-login",
+        "name": "Successful login hides datactrl",
         "keyword": "Scenario",
         "type": "scenario",
-        "tags": [{"name": "@Complex"}],
+        "tags": [{"name": "@Smoke"}],
         "steps": [
           {
-            "name": "the calculator is open",
+            "name": "the HIPOS login page is open",
             "keyword": "Given ",
             "result": {
               "status": "passed",
@@ -266,14 +249,14 @@ Example for GitHub Actions:
 Use tags in your SpecFlow features to link with Xray test cases:
 
 ```gherkin
-@CALC-123 @regression
-Feature: Calculator Operations
+@HIPOS-123 @regression
+Feature: HIPOS login
   
-  @CALC-124 @smoke
-  Scenario: Simple addition
-    Given the calculator is open
-    When I perform the operation "2 + 3"
-    Then the result should be "5"
+  @HIPOS-124 @smoke
+  Scenario: Successful login hides datactrl
+    Given the HIPOS login page is open
+    When I login with employee "-1" and password "000000"
+    Then the datactrl element should not exist
 ```
 
 Tags like `@CALC-123` and `@CALC-124` will be imported to Xray and automatically link to corresponding Test Cases.
@@ -328,12 +311,12 @@ In `appsettings.json`:
 ```csharp
 using Serilog;
 
-public class CalculatorPage : BasePage
+public class HiposLoginPage : BasePage
 {
-    public void ClickNumber(int number)
+    public void Login(string employee, string password)
     {
-        Log.Information("Clicking on number: {Number}", number);
-        Log.Debug("Looking for element with ID: {AutomationId}", $"num{number}Button");
+        Log.Information("Login con employee: {Employee}", employee);
+        Log.Debug("Buscando elementos MSAA para login");
         
         try
         {

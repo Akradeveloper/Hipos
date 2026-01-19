@@ -17,13 +17,13 @@ System.TimeoutException: Could not get main window after 15000ms (PID: 38092)
 
 **Cause:** The framework cannot find the application window.
 
-#### For UWP Apps (Calculator, Windows Store Apps)
+#### For UWP Apps (Windows Store Apps)
 
 ✅ **Solution 1:** Increase timeout to 15-20 seconds
 
 ```json
 {
-  "AppPath": "calc.exe",
+  "AppPath": "YourUwpApp.exe",
   "DefaultTimeout": 20000  // 20 seconds
 }
 ```
@@ -33,7 +33,7 @@ System.TimeoutException: Could not get main window after 15000ms (PID: 38092)
 ```
 # Search in logs/test-*.log
 [00:05.000] ⚠️ Switching to relaxed search mode (by window title)
-[00:05.500] ✓ Window found: 'Calculadora' (PID: 38124, Mode: Relaxed)
+[00:05.500] ✓ Window found: 'MyUwpApp' (PID: 38124, Mode: Relaxed)
 ```
 
 If you see `Mode: Relaxed`, it means the window is in a **child process** (normal for UWP).
@@ -193,10 +193,10 @@ ClickLogin();
 
 ✅ **Solution:**
 ```csharp
-[SetUp]
-public void TestSetUp()
+[BeforeScenario]
+public void BeforeScenario()
 {
-    // BaseTest.SetUp already launched clean app
+    // TestHooks already launched a clean app session
     // Navigate to known initial state
     ResetToDefaultState();
 }
@@ -436,7 +436,7 @@ ls src/Hipos.Tests/bin/Debug/net8.0-windows/reports/
 ```
 
 If empty:
-- Verify ExtentReports is initialized in `TestHooks` or `BaseTest`
+- Verify ExtentReports is initialized in `TestHooks`
 - Verify tests ran completely
 - Check for exceptions during `AfterTestRun`/`OneTimeTearDown`
 
@@ -444,7 +444,7 @@ If empty:
 
 Check that `ExtentReportManager.Flush()` is called in:
 - `TestHooks.AfterTestRun` (for SpecFlow)
-- `BaseTest.OneTimeTearDown` (for NUnit)
+- `TestHooks.AfterTestRun`
 
 ### Screenshots Not Appearing in Report
 
@@ -458,7 +458,7 @@ ls src/Hipos.Tests/bin/Debug/net8.0-windows/reports/screenshots/
 If empty:
 - Test didn't fail (screenshots only on failures)
 - Verify write permissions
-- Verify `TestHooks.AfterScenario` or `BaseTest.TearDown` executes
+- Verify `TestHooks.AfterScenario` executes
 
 ### Cucumber JSON Not Generated
 

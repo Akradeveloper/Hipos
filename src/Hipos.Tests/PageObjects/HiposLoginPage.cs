@@ -1,115 +1,101 @@
 using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Input;
+using Hipos.Framework.Config;
 using Hipos.Framework.Utils;
 using Serilog;
 
 namespace Hipos.Tests.PageObjects;
 
-/// <summary>
-/// Page Object para el login inicial de HIPOS usando MSAA.
-/// </summary>
 public class HiposLoginPage : BasePage
 {
-    private const string SignonPaneId = "signon";
-    private const string DataCtrlId = "datactrl";
-    private const string EmployeePaneId = "employee";
-    private const string EmployeeInputId = "input";
-    private const string PasswordId = "password";
-    private const string OkButtonId = "ok";
+    private readonly IntPtr _windowHandle;
+    private readonly string[] _employeePath;
+    private readonly string[] _passwordPath;
+    private readonly string[] _loginButtonPath;
+    private readonly string[] _dataCtrlPath;
 
     public HiposLoginPage(Window window) : base(window)
     {
-        Log.Information("Inicializando HiposLoginPage");
-    }
+        _windowHandle = GetWindowHandle(window);
 
-    public void EnterEmployeeAndTab(string employee)
-    {
-        Log.Information("Ingresando employee: {Employee}", employee);
-        ExtentReportManager.LogInfo($"Ingresando employee: {employee}");
-
-        var employeeInput = FindEmployeeInput();
-        employeeInput.SetText(employee);
-
-        Keyboard.Type(FlaUI.Core.WindowsAPI.VirtualKeyShort.TAB);
-
-        WaitHelper.WaitUntil(
-            () => ElementExists(PasswordId),
-            DefaultTimeout,
-            conditionDescription: "campo password disponible");
-    }
-
-    public void EnterPassword(string password)
-    {
-        Log.Information("Ingresando password");
-        ExtentReportManager.LogInfo("Ingresando password");
-
-        var passwordInput = FindPasswordInput();
-        passwordInput.SetText(password);
-    }
-
-    public void ClickOk()
-    {
-        Log.Information("Click en botón OK");
-        ExtentReportManager.LogInfo("Click en botón OK");
-
-        var okButton = FindOkButton();
-        okButton.Click();
+        var config = ConfigManager.Instance;
+        _employeePath = ParseNamePath(config.GetValue("Msaa:Login:EmployeeNamePath", "employee"));
+        _passwordPath = ParseNamePath(config.GetValue("Msaa:Login:PasswordNamePath", "password"));
+        _loginButtonPath = ParseNamePath(config.GetValue("Msaa:Login:LoginButtonNamePath", "login"));
+        _dataCtrlPath = ParseNamePath(config.GetValue("Msaa:Login:DataCtrlNamePath", "datactrl"));
     }
 
     public void Login(string employee, string password)
     {
         EnsureWindowInForeground();
-        EnterEmployeeAndTab(employee);
-        EnterPassword(password);
-        ClickOk();
+        Log.Information("MSAA login con employee: {Employee}", employee);
+
+        SetText(_employeePath, employee);
+        SetText(_passwordPath, password);
+        Click(_loginButtonPath);
     }
 
-    public bool WaitForDataCtrlToDisappear(int? timeoutMs = null)
+    public bool WaitForDataCtrlToDisappear()
     {
-        var timeout = timeoutMs ?? DefaultTimeout;
-        var windowHandle = GetWindowHandle();
         return WaitHelper.WaitUntil(
-            () => !MsaaHelper.ExistsByNamePath(windowHandle, SignonPaneId, DataCtrlId),
-            timeout,
-            conditionDescription: "datactrl desaparezca");
+            () => !Exists(_dataCtrlPath),
+            DefaultTimeout,
+            conditionDescription: "elemento MSAA 'datactrl' desaparezca");
     }
 
-    public bool IsDataCtrlPresent()
+    private void SetText(string[] namePath, string text)
     {
-        var windowHandle = GetWindowHandle();
-        return MsaaHelper.ExistsByNamePath(windowHandle, SignonPaneId, DataCtrlId);
+        var element = FindElementByPath(namePath);
+        element.SetText(text);
     }
 
-    private MsaaHelper.MsaaElement FindEmployeeInput()
+    private void Click(string[] namePath)
     {
-        var windowHandle = GetWindowHandle();
-        return MsaaHelper.FindByNamePath(
-            windowHandle,
-            SignonPaneId,
-            DataCtrlId,
-            EmployeePaneId,
-            EmployeeInputId);
+        var element = FindElementByPath(namePath);
+        element.Click();
     }
 
-    private MsaaHelper.MsaaElement FindPasswordInput()
+    private bool Exists(string[] namePath)
     {
-        var windowHandle = GetWindowHandle();
-        return MsaaHelper.FindByNamePath(windowHandle, SignonPaneId, DataCtrlId, PasswordId);
+        return MsaaHelper.ExistsByNamePath(_windowHandle, namePath);
     }
 
-    private MsaaHelper.MsaaElement FindOkButton()
+    private MsaaHelper.MsaaElement FindElementByPath(string[] namePath)
     {
-        var windowHandle = GetWindowHandle();
-        return MsaaHelper.FindByNamePath(windowHandle, SignonPaneId, DataCtrlId, OkButtonId);
-    }
-
-    private IntPtr GetWindowHandle()
-    {
-        if (!Window.Properties.NativeWindowHandle.IsSupported)
+        try
         {
-            throw new InvalidOperationException("El handle nativo de la ventana no está disponible.");
+            return MsaaHelper.FindByNamePath(_windowHandle, namePath);
+        }
+        catch (InvalidOperationException ex)
+        {
+            var path = string.Join(" > ", namePath);
+            throw new InvalidOperationException(
+                $"No se encontró elemento MSAA con ruta '{path}'.", ex);
+        }
+    }
+
+    private static IntPtr GetWindowHandle(Window window)
+    {
+        if (!window.Properties.NativeWindowHandle.IsSupported)
+        {
+            throw new InvalidOperationException("La ventana no expone un handle nativo.");
         }
 
-        return Window.Properties.NativeWindowHandle.Value;
+        return window.Properties.NativeWindowHandle.Value;
+    }
+
+    private static string[] ParseNamePath(string rawPath)
+    {
+        var parts = rawPath
+            .Split('>')
+            .Select(part => part.Trim())
+            .Where(part => !string.IsNullOrEmpty(part))
+            .ToArray();
+
+        if (parts.Length == 0)
+        {
+            throw new InvalidOperationException("MSAA name path inválido en configuración.");
+        }
+
+        return parts;
     }
 }

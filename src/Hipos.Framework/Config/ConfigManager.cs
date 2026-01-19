@@ -50,16 +50,6 @@ public class ConfigManager
     public int DefaultTimeout => int.Parse(GetValue("DefaultTimeout", "5000"));
 
     /// <summary>
-    /// Número de reintentos para operaciones transitorias.
-    /// </summary>
-    public int RetryCount => int.Parse(GetValue("RetryCount", "3"));
-
-    /// <summary>
-    /// Nivel de log mínimo.
-    /// </summary>
-    public string LogLevel => GetValue("Serilog:MinimumLevel", "Information");
-
-    /// <summary>
     /// Obtiene un valor de configuración por clave.
     /// </summary>
     /// <param name="key">Clave de configuración (puede usar : para anidación)</param>

@@ -10,66 +10,59 @@ This page explains the Hipos framework architecture, its main components, and ho
 
 ```mermaid
 graph TB
-    subgraph Tests[Test Layer]
-        UT[Unit Tests - NUnit<br/>11 traditional tests]
-        BDD[BDD Tests - SpecFlow<br/>11 Gherkin scenarios]
+    subgraph Tests[TestLayer]
+        UT[NUnit_tests]
+        BDD[SpecFlow_BDD]
     end
     
-    subgraph PageObjects[Page Object Layer]
-        CP[CalculatorPage<br/>Click nums operators]
-        BP[BasePage<br/>FindElement waits]
+    subgraph PageObjects[PageObjectLayer]
+        HP[HiposLoginPage]
+        BP[BasePage]
     end
     
-    subgraph Framework[Framework Layer]
-        AL[AppLauncher<br/>Hybrid Search]
-        BT[BaseTest<br/>OneTimeSetUp TearDown]
-        TH[TestHooks<br/>SpecFlow Lifecycle]
-        WH[WaitHelper<br/>Explicit waits]
-        EW[ElementWrapper<br/>Simplified API]
-        SH[ScreenshotHelper<br/>Auto capture]
-        CM[ConfigManager<br/>appsettings env]
-        RP[RetryPolicy<br/>Transient errors]
-        CJ[CucumberJsonReportGenerator<br/>Xray Integration]
+    subgraph Framework[FrameworkLayer]
+        AL[AppLauncher]
+        TH[TestHooks]
+        WH[WaitHelper]
+        EW[ElementWrapper]
+        SH[ScreenshotHelper]
+        CM[ConfigManager]
+        MH[MsaaHelper]
+        CJ[CucumberJsonReportGenerator]
     end
     
-    subgraph External[External Libraries]
-        FlaUI[FlaUI UIA3<br/>v4.0]
-        NUnit[NUnit<br/>v4.2]
-        SpecFlow[SpecFlow<br/>v4.0]
-        ExtentReports[ExtentReports<br/>v5.0]
-        Serilog[Serilog<br/>v3.1]
+    subgraph External[ExternalLibraries]
+        FlaUI[FlaUI_UIA3]
+        NUnit[NUnit]
+        SpecFlow[SpecFlow]
+        ExtentReports[ExtentReports]
+        Serilog[Serilog]
     end
     
-    subgraph AUT[Applications Under Test]
-        CalcApp[Windows Calculator<br/>calc.exe]
-        NotepadApp[Notepad<br/>notepad.exe]
-        CustomApp[Your App<br/>customizable]
+    subgraph AUT[ApplicationsUnderTest]
+        HiposApp[HIPOS]
+        CustomApp[CustomApp]
     end
     
-    UT --> CP
-    BDD --> CP
-    CP --> BP
+    UT --> HP
+    BDD --> HP
+    HP --> BP
     BP --> WH
     BP --> EW
-    UT --> BT
     BDD --> TH
-    BT --> AL
     TH --> AL
-    BT --> SH
-    BT --> CM
+    TH --> SH
     TH --> CM
     TH --> CJ
-    AL -->|"Strict (5s)"| FlaUI
-    AL -->|"Relaxed (10s)"| FlaUI
+    HP --> MH
+    AL --> FlaUI
     WH --> FlaUI
     EW --> FlaUI
-    BT --> NUnit
     TH --> SpecFlow
     TH --> ExtentReports
     TH --> Serilog
-    EW --> RP
-    AL --> CalcApp
-    AL --> NotepadApp
+    UT --> NUnit
+    AL --> HiposApp
     AL --> CustomApp
 ```
 
@@ -80,45 +73,23 @@ graph TB
 **Responsibility:** Define test cases and assertions.
 
 **Components:**
-- `CalculatorTests.cs` - 11 traditional NUnit tests against Windows Calculator
-  - 4 basic tests (`Category=Demo`): Open and UI verification
-  - 7 complex tests (`Category=Complex`): Real mathematical operations
-- `Calculadora.feature` - 11 BDD scenarios in Gherkin format
+- `Login.feature` - BDD scenarios for HIPOS login
   - Uses SpecFlow step definitions
   - Generates Cucumber JSON for Jira/Xray
 
 **Features:**
-- Inherits from `BaseTest` or uses `BaseStepDefinitions` for automatic hooks
-- Uses `CalculatorPage` to interact with buttons and display
+- Uses `BaseStepDefinitions` for common logging
+- Uses `HiposLoginPage` to interact with MSAA controls
 - Includes ExtentReports logging
-- Implements Arrange-Act-Assert (AAA) pattern
-- Complex tests perform real operations: addition, subtraction, multiplication, division, sequential operations
-
-**Example (NUnit):**
-
-```csharp
-[Test]
-[Category("Smoke")]
-[Description("Verifies calculator opens correctly")]
-public void VerifyCalculatorOpens()
-{
-    // Arrange
-    var calculatorPage = new CalculatorPage(MainWindow!);
-    
-    // Act & Assert
-    Assert.That(MainWindow.Title, Does.Contain("Calculator").Or.Contains("Calculadora"));
-    ExtentReportManager.LogPass("Calculator opened successfully");
-}
-```
 
 **Example (SpecFlow):**
 
 ```gherkin
-@Calculator @Smoke
-Scenario: Verify that the Calculator opens correctly
-  Given the calculator is open
-  When I verify the window title
-  Then the title should contain "Calculator" or "Calculadora"
+Feature: HIPOS login
+  Scenario: Successful login hides datactrl
+    Given the HIPOS login page is open
+    When I login with employee "-1" and password "000000"
+    Then the datactrl element should not exist
 ```
 
 ### 2. Page Object Layer
@@ -127,7 +98,7 @@ Scenario: Verify that the Calculator opens correctly
 
 **Components:**
 - `BasePage.cs` - Base class with common functionality
-- `CalculatorPage.cs` - Page for calculator operations
+- `HiposLoginPage.cs` - Page for HIPOS login using MSAA
 
 **Page Object Pattern:**
 
@@ -141,19 +112,12 @@ classDiagram
         +WaitForElementVisible(automationId) bool
     }
     
-    class CalculatorPage {
-        +ClickNumber(num) void
-        +ClickPlus() void
-        +ClickMinus() void
-        +ClickMultiply() void
-        +ClickDivide() void
-        +ClickEquals() void
-        +ClickClear() void
-        +GetDisplayValue() string
-        +PerformOperation(num1, op, num2) void
+    class HiposLoginPage {
+        +Login(employee, password) void
+        +WaitForDataCtrlToDisappear() bool
     }
     
-    BasePage <|-- CalculatorPage
+    BasePage <|-- HiposLoginPage
 ```
 
 **Advantages:**
@@ -187,12 +151,6 @@ sequenceDiagram
     AppLauncher-->>Test: Window ready
 ```
 
-#### BaseTest
-- Provides SetUp/TearDown hooks for NUnit tests
-- Configures Serilog and ExtentReports
-- Captures screenshots on failures
-- Attaches evidence to report
-
 #### TestHooks
 - Provides lifecycle hooks for SpecFlow scenarios
 - Configures Serilog, ExtentReports, and CucumberJsonReportGenerator
@@ -204,27 +162,27 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant NUnit/SpecFlow
-    participant BaseTest/TestHooks
+    participant SpecFlow
+    participant TestHooks
     participant AppLauncher
     participant Test
     participant ExtentReports
     participant CucumberJson
     
-    NUnit/SpecFlow->>BaseTest/TestHooks: [BeforeTestRun/OneTimeSetUp]
-    BaseTest/TestHooks->>AppLauncher: LaunchApp()
-    AppLauncher-->>BaseTest/TestHooks: MainWindow
-    BaseTest/TestHooks->>Test: Execute test
-    alt Test Failed
-        Test-->>BaseTest/TestHooks: Exception
-        BaseTest/TestHooks->>BaseTest/TestHooks: TakeScreenshot()
-        BaseTest/TestHooks->>ExtentReports: AttachScreenshot()
-        BaseTest/TestHooks->>CucumberJson: RecordFailure()
+    SpecFlow->>TestHooks: [BeforeTestRun]
+    TestHooks->>AppLauncher: LaunchApp()
+    AppLauncher-->>TestHooks: MainWindow
+    TestHooks->>Test: Execute scenario
+    alt Scenario Failed
+        Test-->>TestHooks: Exception
+        TestHooks->>TestHooks: TakeScreenshot()
+        TestHooks->>ExtentReports: AttachScreenshot()
+        TestHooks->>CucumberJson: RecordFailure()
     end
-    BaseTest/TestHooks->>AppLauncher: CloseApp()
-    BaseTest/TestHooks->>ExtentReports: Flush()
-    BaseTest/TestHooks->>CucumberJson: GenerateReport()
-    BaseTest/TestHooks->>NUnit/SpecFlow: [AfterTestRun/OneTimeTearDown]
+    TestHooks->>AppLauncher: CloseApp()
+    TestHooks->>ExtentReports: Flush()
+    TestHooks->>CucumberJson: GenerateReport()
+    TestHooks->>SpecFlow: [AfterTestRun]
 ```
 
 #### WaitHelper
@@ -344,52 +302,48 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant NUnit
-    participant BaseTest
-    participant Test
+    participant SpecFlow
+    participant TestHooks
+    participant Scenario
     participant PageObject
     participant Framework
     participant FlaUI
     participant App
     
-    NUnit->>BaseTest: [OneTimeSetUp]
-    BaseTest->>BaseTest: Initialize Serilog
+    SpecFlow->>TestHooks: [BeforeTestRun]
+    TestHooks->>TestHooks: Initialize Serilog
     
-    NUnit->>BaseTest: [SetUp]
-    BaseTest->>Framework: ConfigManager.GetAppPath()
-    BaseTest->>Framework: AppLauncher.LaunchApp()
+    SpecFlow->>TestHooks: [BeforeScenario]
+    TestHooks->>Framework: ConfigManager.GetAppPath()
+    TestHooks->>Framework: AppLauncher.LaunchApp()
     Framework->>FlaUI: Application.Launch()
     FlaUI->>App: Start
     App-->>FlaUI: Running
     FlaUI-->>Framework: MainWindow
-    Framework-->>BaseTest: Window ready
+    Framework-->>TestHooks: Window ready
     
-    NUnit->>Test: Execute test
-    Test->>PageObject: ClickNumber(5)
-    PageObject->>Framework: FindElement("Number5")
-    Framework->>FlaUI: FindFirstDescendant()
-    FlaUI-->>Framework: Element
-    Framework-->>PageObject: ElementWrapper
-    PageObject->>Framework: Click()
-    Framework->>FlaUI: AsButton().Click()
+    SpecFlow->>Scenario: Execute scenario
+    Scenario->>PageObject: Login(employee, password)
+    PageObject->>Framework: MsaaHelper.FindByNamePath()
+    Framework-->>PageObject: MsaaElement
+    PageObject->>Framework: MsaaElement.SetText()/Click()
     
-    Test->>Test: Assert.That(...)
+    Scenario->>Scenario: Assert.That(...)
     
-    alt Test Failed
-        Test-->>BaseTest: Exception
-        BaseTest->>Framework: ScreenshotHelper.TakeScreenshot()
+    alt Scenario Failed
+        Scenario-->>TestHooks: Exception
+        TestHooks->>Framework: ScreenshotHelper.TakeScreenshot()
         Framework->>FlaUI: Capture.Window()
         FlaUI-->>Framework: Image
-        Framework-->>BaseTest: Screenshot path
-        BaseTest->>BaseTest: ExtentReports.AttachScreenshot()
+        Framework-->>TestHooks: Screenshot path
+        TestHooks->>TestHooks: ExtentReports.AttachScreenshot()
     end
     
-    NUnit->>BaseTest: [TearDown]
-    BaseTest->>Framework: AppLauncher.CloseApp()
+    SpecFlow->>TestHooks: [AfterTestRun]
+    TestHooks->>Framework: AppLauncher.CloseApp()
     Framework->>App: Close()
     
-    NUnit->>BaseTest: [OneTimeTearDown]
-    BaseTest->>BaseTest: Log.CloseAndFlush()
+    SpecFlow->>TestHooks: Log.CloseAndFlush()
 ```
 
 ## Design Principles
@@ -397,14 +351,14 @@ sequenceDiagram
 ### SOLID
 
 - **Single Responsibility**: Each class has a single responsibility
-- **Open/Closed**: Extensible through inheritance (BaseTest, BasePage)
+- **Open/Closed**: Extensible through inheritance (BasePage)
 - **Liskov Substitution**: Page Objects are interchangeable
 - **Interface Segregation**: Small and specific interfaces
 - **Dependency Inversion**: Dependency on abstractions (IConfiguration)
 
 ### DRY (Don't Repeat Yourself)
 - Helpers and wrappers avoid duplicate code
-- BaseTest and BasePage centralize common logic
+- BasePage centralizes common logic
 
 ### KISS (Keep It Simple)
 - Clear and easy-to-use API
