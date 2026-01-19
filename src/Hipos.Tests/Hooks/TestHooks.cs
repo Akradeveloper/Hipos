@@ -81,11 +81,30 @@ public class TestHooks
                 // Forzar que la ventana esté en primer plano
                 appLauncher.EnsureWindowIsInForeground();
                 
-                // Verificar y reintentar si es necesario
-                Thread.Sleep(300);
-                appLauncher.EnsureWindowIsInForeground();
+                // Verificar que la ventana esté realmente en primer plano usando wait adaptativo
+                var windowInForeground = WaitHelper.WaitUntilAdaptive(
+                    () =>
+                    {
+                        try
+                        {
+                            return mainWindow != null && !mainWindow.IsOffscreen;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    },
+                    timeoutMs: 500,
+                    conditionDescription: "ventana en primer plano");
                 
-                Log.Information("✓ Window ensured in foreground for scenario: {ScenarioTitle}", scenarioTitle);
+                if (windowInForeground)
+                {
+                    Log.Information("✓ Window ensured in foreground for scenario: {ScenarioTitle}", scenarioTitle);
+                }
+                else
+                {
+                    Log.Warning("No se pudo verificar que la ventana esté en primer plano");
+                }
             }
             else
             {
@@ -278,7 +297,36 @@ public class TestHooks
 
             // Método 1: Cierre normal
             appLauncher.CloseApp();
-            Thread.Sleep(1500);
+            
+            // Esperar a que el proceso termine usando wait adaptativo
+            if (processId.HasValue)
+            {
+                WaitHelper.WaitUntilAdaptive(
+                    () =>
+                    {
+                        try
+                        {
+                            var proc = System.Diagnostics.Process.GetProcessById(processId.Value);
+                            return proc.HasExited;
+                        }
+                        catch (ArgumentException)
+                        {
+                            // Proceso ya no existe
+                            return true;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    },
+                    timeoutMs: 2000,
+                    conditionDescription: "proceso terminado");
+            }
+            else
+            {
+                // Si no tenemos PID, esperar un tiempo mínimo
+                Thread.Sleep(500);
+            }
 
             // Método 2: Forzar cierre por PID si es necesario
             if (processId.HasValue)
@@ -399,7 +447,12 @@ public class TestHooks
         try
         {
             application.Kill();
-            Thread.Sleep(1000);
+            
+            // Esperar a que termine usando wait adaptativo
+            WaitHelper.WaitUntilAdaptive(
+                () => application.HasExited,
+                timeoutMs: 2000,
+                conditionDescription: "aplicación terminada después de Kill()");
         }
         catch (Exception killEx)
         {

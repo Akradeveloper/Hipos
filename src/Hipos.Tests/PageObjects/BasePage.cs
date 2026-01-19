@@ -80,9 +80,16 @@ public abstract class BasePage
     /// <returns>True if the element disappeared, false if timeout</returns>
     protected bool WaitForElementToDisappear(string[] namePath, int? timeoutMs = null)
     {
-        var timeout = timeoutMs ?? DefaultTimeout;
+        var config = ConfigManager.Instance;
+        var baseTimeout = timeoutMs ?? DefaultTimeout;
+        
+        // Usar timeout adaptativo si está habilitado
+        var timeout = config.AdaptiveTimeoutsEnabled
+            ? AdaptiveTimeoutManager.Instance.GetAdaptiveTimeout(baseTimeout)
+            : baseTimeout;
+        
         var path = string.Join(" > ", namePath);
-        return WaitHelper.WaitUntil(
+        return WaitHelper.WaitUntilAdaptive(
             () => !ElementExistsByPath(namePath),
             timeout,
             conditionDescription: $"elemento MSAA '{path}' desaparezca");
@@ -118,7 +125,11 @@ public abstract class BasePage
         try
         {
             Window.Focus();
-            Thread.Sleep(300); // Small pause for the window to respond
+            // Esperar a que la ventana responda usando wait adaptativo
+            WaitHelper.WaitUntilAdaptive(
+                () => !Window.IsOffscreen,
+                timeoutMs: 500,
+                conditionDescription: "ventana en primer plano");
             Log.Debug("Window brought to foreground in Page Object");
         }
         catch (Exception ex)

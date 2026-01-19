@@ -1,6 +1,7 @@
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
+using Hipos.Framework.Utils;
 using Serilog;
 using System.Diagnostics;
 
@@ -62,16 +63,39 @@ public class AppLauncher
                 Log.Information("Adjuntado a proceso existente con PID: {ProcessId}", processId);
             }
             
-            // Dar tiempo al proceso para inicializarse
-            Thread.Sleep(attached ? 500 : 1500);
+            // Dar tiempo mínimo al proceso para inicializarse (solo si es necesario)
+            if (!attached)
+            {
+                // Esperar a que el proceso esté ejecutándose usando wait adaptativo
+                var processStarted = WaitHelper.WaitUntilAdaptive(
+                    () =>
+                    {
+                        try
+                        {
+                            return _application != null && !_application.HasExited;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    },
+                    timeoutMs: 2000,
+                    conditionDescription: "proceso iniciado");
+                
+                if (!processStarted)
+                {
+                    Log.Warning("Proceso puede no estar completamente inicializado, continuando...");
+                }
+            }
             
             // Variables para búsqueda híbrida
             var startTime = DateTime.Now;
             var relaxedModeLogged = false;
             var allWindowsFound = new System.Collections.Generic.List<string>();
             var processName = Path.GetFileNameWithoutExtension(exePath);
+            var currentPollingInterval = 100; // Empezar con polling rápido
             
-            // Esperar a que la ventana principal esté disponible
+            // Esperar a que la ventana principal esté disponible con polling adaptativo
             while ((DateTime.Now - startTime).TotalMilliseconds < timeoutMs)
             {
                 var elapsedMs = (DateTime.Now - startTime).TotalMilliseconds;
@@ -87,13 +111,16 @@ public class AppLauncher
                 try
                 {
                     // Método 1: GetMainWindow (siempre intentamos primero)
-                    _mainWindow = _application.GetMainWindow(_automation);
-                    if (_mainWindow != null && !_mainWindow.IsOffscreen)
+                    if (_automation != null && _application != null)
                     {
-                        Log.Information("✓ Ventana principal encontrada vía GetMainWindow: '{Title}' (PID: {ProcessId}, Mode: Standard)", 
-                            _mainWindow.Title, processId);
-                        BringWindowToFront(_mainWindow);
-                        return _mainWindow;
+                        _mainWindow = _application.GetMainWindow(_automation);
+                        if (_mainWindow != null && !_mainWindow.IsOffscreen)
+                        {
+                            Log.Information("✓ Ventana principal encontrada vía GetMainWindow: '{Title}' (PID: {ProcessId}, Mode: Standard)", 
+                                _mainWindow.Title, processId);
+                            BringWindowToFront(_mainWindow);
+                            return _mainWindow;
+                        }
                     }
                 }
                 catch
@@ -104,7 +131,13 @@ public class AppLauncher
                 // Método 2: Búsqueda híbrida (strict → relaxed)
                 try
                 {
-                    var allWindows = _automation!.GetDesktop().FindAllChildren();
+                    if (_automation == null)
+                    {
+                        Log.Warning("Automation es null, no se puede buscar ventana");
+                        continue;
+                    }
+                    
+                    var allWindows = _automation.GetDesktop().FindAllChildren();
                     
                     foreach (var element in allWindows)
                     {
@@ -204,7 +237,21 @@ public class AppLauncher
                     Log.Debug("Error en búsqueda alternativa: {Error}", ex.Message);
                 }
 
-                Thread.Sleep(500);
+                // Polling adaptativo: empezar rápido, aumentar gradualmente
+                if (elapsedMs < 2000)
+                {
+                    currentPollingInterval = 100; // Primeros 2 segundos: muy rápido
+                }
+                else if (elapsedMs < 5000)
+                {
+                    currentPollingInterval = 300; // Entre 2-5 segundos: medio
+                }
+                else
+                {
+                    currentPollingInterval = 500; // Después de 5 segundos: normal
+                }
+
+                Thread.Sleep(currentPollingInterval);
             }
 
             // Timeout - mostrar todas las ventanas encontradas para debugging
@@ -281,8 +328,11 @@ public class AppLauncher
             window.Focus();
             Log.Debug("Ventana enfocada usando Focus()");
 
-            // Dar tiempo para que la ventana responda
-            Thread.Sleep(500);
+            // Esperar a que la ventana responda usando wait adaptativo
+            WaitHelper.WaitUntilAdaptive(
+                () => !window.IsOffscreen,
+                timeoutMs: 500,
+                conditionDescription: "ventana en primer plano");
         }
         catch (Exception ex)
         {
