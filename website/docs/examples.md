@@ -45,20 +45,39 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
 }
 ```
 
-## MSAA Configuration
+## Page Object Implementation
 
-Define the MSAA selectors in `src/Hipos.Tests/appsettings.json`:
+MSAA selectors are defined as static constants in the PageObject:
 
-```json
+```csharp
+public class HiposLoginPage : BasePage
 {
-  "Msaa": {
-    "SearchMaxDepth": 6,
-    "Login": {
-      "EmployeeNamePath": "employee",
-      "PasswordNamePath": "password",
-      "LoginButtonNamePath": "login",
-      "DataCtrlNamePath": "datactrl"
+    // MSAA selectors as static constants
+    private static readonly string[] EmployeePath = { "employee" };
+    private static readonly string[] PasswordPath = { "password" };
+    private static readonly string[] LoginButtonPath = { "login" };
+    private static readonly string[] DataCtrlPath = { "datactrl" };
+
+    public HiposLoginPage(Window window) : base(window) { }
+
+    public void Login(string employee, string password)
+    {
+        EnsureWindowInForeground();
+        SetElementText(employee, EmployeePath);
+        SetElementText(password, PasswordPath);
+        ClickElement(LoginButtonPath);
     }
-  }
+    
+    public bool WaitForDataCtrlToDisappear()
+    {
+        // Uses adaptive timeouts if enabled
+        return WaitForElementToDisappear(DataCtrlPath);
+    }
 }
 ```
+
+**Benefits:**
+- Selectors are encapsulated with the PageObject
+- Type-safe (compile-time checking)
+- No configuration file needed
+- Easier to maintain and refactor

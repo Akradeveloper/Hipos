@@ -122,32 +122,18 @@ You can search by name path to traverse nested containers:
 var element = MsaaHelper.FindByNamePath(handle, "LoginPanel", "employee");
 ```
 
-### Configuration for MSAA
-
-Define name paths in `appsettings.json` to keep selectors centralized:
-
-```json
-{
-  "Msaa": {
-    "SearchMaxDepth": 6,
-    "Login": {
-      "EmployeeNamePath": "LoginPanel > employee",
-      "PasswordNamePath": "LoginPanel > password",
-      "LoginButtonNamePath": "LoginPanel > login",
-      "DataCtrlNamePath": "datactrl"
-    }
-  }
-}
-```
+**Note:** MSAA selectors are now defined as static constants in PageObjects (see Page Objects section below), not in `appsettings.json`.
 
 ## WaitHelper
 
 Utilities for explicit waits. ALWAYS use explicit waits, not `Thread.Sleep()`.
 
-### WaitUntil (Generic)
+### WaitUntil (Fixed Polling)
+
+Generic wait with fixed polling interval:
 
 ```csharp
-// Wait for custom condition
+// Wait for custom condition with fixed polling
 bool success = WaitHelper.WaitUntil(
     condition: () => someElement.IsVisible,
     timeoutMs: 5000,
@@ -161,15 +147,50 @@ if (!success)
 }
 ```
 
+### WaitUntilAdaptive (Adaptive Polling) ⭐ Recommended
+
+Adaptive polling that starts fast and increases gradually if condition doesn't meet. Automatically records response times for adaptive timeouts.
+
+```csharp
+// Wait with adaptive polling (recommended)
+bool success = WaitHelper.WaitUntilAdaptive(
+    condition: () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 5000,
+    conditionDescription: "button exists"
+);
+```
+
+**How it works:**
+- **First 2 seconds**: Fast polling (100ms) for quick conditions
+- **2-5 seconds**: Medium polling (300ms)
+- **After 5 seconds**: Slower polling (up to 1000ms) to save resources
+
+**Benefits:**
+- ✅ Faster detection of quick conditions
+- ✅ More efficient than fixed polling
+- ✅ Automatically records response times for adaptive timeouts
+
 ### Best Practices
 
 ✅ **DO:**
 
 ```csharp
-// Explicit wait with custom condition
+// Use adaptive polling (recommended)
+WaitHelper.WaitUntilAdaptive(
+    () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 5000,
+    conditionDescription: "button exists");
+ClickElement("Parent", "Button");
+```
+
+✅ **Also valid (fixed polling):**
+
+```csharp
+// Explicit wait with fixed polling interval
 WaitHelper.WaitUntil(
     () => ElementExistsByPath("Parent", "Button"),
     timeoutMs: 5000,
+    pollingIntervalMs: 500,
     conditionDescription: "button exists");
 ClickElement("Parent", "Button");
 ```
@@ -177,7 +198,7 @@ ClickElement("Parent", "Button");
 ❌ **DON'T:**
 
 ```csharp
-// Hardcoded sleep
+// Hardcoded sleep - NEVER use this
 Thread.Sleep(2000);
 ClickElement("Parent", "Button");
 ```
@@ -257,6 +278,8 @@ public abstract class BasePage
     protected bool WaitForElementToDisappear(string[] namePath, int? timeoutMs = null)
     {
         // Waits until MSAA element disappears
+        // Uses adaptive timeouts if enabled in configuration
+        // Uses WaitUntilAdaptive for efficient polling
     }
     
     protected static string[] ParseNamePath(string rawPath)
@@ -267,52 +290,59 @@ public abstract class BasePage
     protected void EnsureWindowInForeground()
     {
         // Brings window to foreground using FlaUI
+        // Uses WaitUntilAdaptive instead of Thread.Sleep
     }
 }
 ```
 
 ### Create Your Page Object (MSAA)
 
+MSAA selectors are now defined as static constants in PageObjects for better encapsulation and type safety:
+
 ```csharp
 public class HiposLoginPage : BasePage
 {
-    private readonly string[] _employeePath;
-    private readonly string[] _passwordPath;
-    private readonly string[] _loginButtonPath;
-    private readonly string[] _dataCtrlPath;
+    // MSAA selectors as static constants
+    private static readonly string[] EmployeePath = { "employee" };
+    private static readonly string[] PasswordPath = { "password" };
+    private static readonly string[] LoginButtonPath = { "login" };
+    private static readonly string[] DataCtrlPath = { "datactrl" };
 
     public HiposLoginPage(Window window) : base(window)
     {
-        var config = ConfigManager.Instance;
-        _employeePath = ParseNamePath(config.GetValue("Msaa:Login:EmployeeNamePath", "employee"));
-        _passwordPath = ParseNamePath(config.GetValue("Msaa:Login:PasswordNamePath", "password"));
-        _loginButtonPath = ParseNamePath(config.GetValue("Msaa:Login:LoginButtonNamePath", "login"));
-        _dataCtrlPath = ParseNamePath(config.GetValue("Msaa:Login:DataCtrlNamePath", "datactrl"));
     }
 
     public void Login(string employee, string password)
     {
         EnsureWindowInForeground();
-        SetElementText(employee, _employeePath);
-        SetElementText(password, _passwordPath);
-        ClickElement(_loginButtonPath);
+        SetElementText(employee, EmployeePath);
+        SetElementText(password, PasswordPath);
+        ClickElement(LoginButtonPath);
     }
     
     public bool WaitForDataCtrlToDisappear()
     {
-        return WaitForElementToDisappear(_dataCtrlPath);
+        // Uses adaptive timeouts if enabled
+        return WaitForElementToDisappear(DataCtrlPath);
     }
 }
 ```
 
+**Benefits of static constants:**
+- ✅ Better encapsulation (selectors live with the PageObject)
+- ✅ Type safety (compile-time checking)
+- ✅ No configuration file needed for selectors
+- ✅ Easier to maintain and refactor
+
 ### Conventions
 
-1. **Name paths in configuration**: Centralize selectors in appsettings.json
+1. **Selectors as static constants**: Define MSAA selectors as static readonly arrays in PageObjects
 2. **Public methods only**: Don't expose elements directly
 3. **Naming**: Verbs for actions (`Click`, `Enter`, `Select`)
 4. **ExtentReports Logging**: Document important actions
 5. **Return values**: Only for verifications, not elements
 6. **MSAA for interactions**: Use BasePage MSAA methods for all element interactions
+7. **Adaptive waits**: Use `WaitUntilAdaptive()` for better performance
 
 ## ConfigManager
 
@@ -327,6 +357,13 @@ var config = ConfigManager.Instance;
 string appPath = config.AppPath;
 int timeout = config.DefaultTimeout;
 
+// Adaptive timeout properties
+bool adaptiveEnabled = config.AdaptiveTimeoutsEnabled;
+int initialTimeout = config.InitialTimeout;
+int minTimeout = config.MinTimeout;
+int maxTimeout = config.MaxTimeout;
+int responseTimeWindow = config.ResponseTimeWindow;
+
 // Custom values
 string customValue = config.GetValue("MyCustomKey", "defaultValue");
 
@@ -340,6 +377,13 @@ IConfigurationSection section = config.GetSection("MySection");
 {
   "AppPath": "path/to/app.exe",
   "DefaultTimeout": 5000,
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000,
+    "ResponseTimeWindow": 10
+  },
   "Serilog": {
     "MinimumLevel": "Information"
   },
@@ -347,21 +391,19 @@ IConfigurationSection section = config.GetSection("MySection");
     "CucumberJsonPath": "reports/cucumber.json",
     "IncludeScreenshots": true
   },
-  "Msaa": {
-    "SearchMaxDepth": 6,
-    "Login": {
-      "EmployeeNamePath": "employee",
-      "PasswordNamePath": "password",
-      "LoginButtonNamePath": "login",
-      "DataCtrlNamePath": "datactrl"
-    }
-  },
   "MyCustomKey": "MyValue",
   "MySection": {
     "SubKey": "SubValue"
   }
 }
 ```
+
+**Timeouts Configuration:**
+- `Adaptive`: Enable/disable adaptive timeouts (default: false)
+- `InitialTimeout`: Initial timeout in milliseconds (default: 5000)
+- `MinTimeout`: Minimum timeout allowed (default: 2000)
+- `MaxTimeout`: Maximum timeout allowed (default: 30000)
+- `ResponseTimeWindow`: Number of response times to track (default: 10)
 
 ### Environment Variables
 
@@ -378,6 +420,64 @@ $env:AppPath = "C:\other\app.exe"
 env:
   AppPath: "C:\ci\app.exe"
 ```
+
+## AdaptiveTimeoutManager
+
+`AdaptiveTimeoutManager` automatically adjusts timeouts based on measured application response times. This makes tests faster when the app is fast, and more robust when the app is slow.
+
+### How It Works
+
+1. **Records Response Times**: Automatically records how long conditions take to fulfill
+2. **Calculates Adaptive Timeouts**: Uses percentile 95 of recent response times × safety factor
+3. **Adjusts Automatically**: Timeouts adapt to app speed without manual configuration
+
+### Usage
+
+The framework uses `AdaptiveTimeoutManager` automatically when enabled in configuration:
+
+```json
+{
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000,
+    "ResponseTimeWindow": 10
+  }
+}
+```
+
+When enabled:
+- `WaitUntilAdaptive()` automatically records response times
+- `BasePage.WaitForElementToDisappear()` uses adaptive timeouts
+- Timeouts adjust based on actual app performance
+
+### Manual Usage
+
+```csharp
+var timeoutManager = AdaptiveTimeoutManager.Instance;
+
+// Get adaptive timeout based on measured response times
+int adaptiveTimeout = timeoutManager.GetAdaptiveTimeout(baseTimeout: 5000);
+
+// Get statistics
+var stats = timeoutManager.GetStats();
+if (stats != null)
+{
+    Console.WriteLine($"Average: {stats.Average}ms");
+    Console.WriteLine($"P95: {stats.Percentile95}ms");
+}
+
+// Reset history
+timeoutManager.Reset();
+```
+
+### Benefits
+
+- ✅ **Faster tests**: If app is fast, timeouts are shorter
+- ✅ **More robust**: If app is slow, timeouts adjust automatically
+- ✅ **No configuration needed**: Works automatically once enabled
+- ✅ **Self-learning**: Adapts to app performance over time
 
 ## ScreenshotHelper
 
@@ -516,7 +616,11 @@ public class MyStepDefinitions : BaseStepDefinitions
     {
         LogInfo("Clicking button");
         _page!.ClickButton();
-        Thread.Sleep(500);
+        // Wait for result using adaptive polling
+        WaitHelper.WaitUntilAdaptive(
+            () => _page!.IsResultReady(),
+            timeoutMs: 5000,
+            conditionDescription: "result ready");
     }
 
     [Then("the result should be \"(.*)\"")]
