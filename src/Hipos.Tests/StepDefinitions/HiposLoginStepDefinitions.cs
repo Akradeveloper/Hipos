@@ -11,6 +11,7 @@ namespace Hipos.Tests.StepDefinitions;
 public class HiposLoginStepDefinitions : BaseStepDefinitions
 {
     private HiposLoginPage? _loginPage;
+    private HiposCalendarPage? _calendarPage;
 
     [Given("the HIPOS login page is open")]
     public void GivenTheHiposLoginPageIsOpen()
@@ -44,6 +45,56 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
             "El elemento 'datactrl' debería desaparecer después del login");
 
         LogPass("datactrl ya no existe después del login");
+    }
+
+    [When("I select the last available day in the calendar")]
+    public void WhenISelectTheLastAvailableDayInTheCalendar()
+    {
+        LogInfo("Seleccionando el último día disponible del calendario");
+
+        // Asegurarse de que tenemos la ventana principal
+        Assert.That(MainWindow, Is.Not.Null, "La ventana principal de HIPOS debe estar disponible");
+
+        // Crear o reutilizar la instancia del calendar page
+        if (_calendarPage == null)
+        {
+            _calendarPage = new HiposCalendarPage(MainWindow!);
+        }
+
+        try
+        {
+            _calendarPage.SelectLastAvailableDay();
+            LogPass("Último día disponible seleccionado exitosamente");
+        }
+        catch (InvalidOperationException ex)
+        {
+            LogFail($"Error al seleccionar el último día disponible: {ex.Message}", ex);
+            throw;
+        }
+    }
+
+    [Then("the date_picker element should not exist")]
+    public void ThenTheDatePickerElementShouldNotExist()
+    {
+        LogInfo("Verificando que el elemento 'date_picker' ya no existe");
+
+        // Asegurarse de que tenemos la ventana principal
+        Assert.That(MainWindow, Is.Not.Null, "La ventana principal de HIPOS debe estar disponible");
+
+        // Crear o reutilizar la instancia del calendar page
+        if (_calendarPage == null)
+        {
+            _calendarPage = new HiposCalendarPage(MainWindow!);
+        }
+
+        var datePickerGone = _calendarPage.WaitForDatePickerToDisappear();
+
+        Assert.That(
+            datePickerGone,
+            Is.True,
+            "El elemento 'date_picker' debería desaparecer después de seleccionar un día");
+
+        LogPass("date_picker ya no existe después de seleccionar el día");
     }
 
     private Window WaitForWindowByTitle(string titlePart, int timeoutMs)

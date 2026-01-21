@@ -139,6 +139,70 @@ public abstract class BasePage
     }
 
     /// <summary>
+    /// Gets all child elements of an MSAA element identified by its name path.
+    /// </summary>
+    /// <param name="namePath">Path of element names to find</param>
+    /// <returns>Enumerable collection of child elements</returns>
+    protected IEnumerable<MsaaHelper.MsaaElement> GetAllChildrenByPath(params string[] namePath)
+    {
+        var element = FindElementByPath(namePath);
+        return element.GetAllChildren();
+    }
+
+    /// <summary>
+    /// Finds all child elements that match a name pattern.
+    /// </summary>
+    /// <param name="parentPath">Path to the parent element</param>
+    /// <param name="namePattern">Pattern to match (e.g., "day_*" matches elements starting with "day_")</param>
+    /// <returns>Enumerable collection of matching child elements</returns>
+    protected IEnumerable<MsaaHelper.MsaaElement> FindElementsByPattern(string[] parentPath, string namePattern)
+    {
+        var children = GetAllChildrenByPath(parentPath);
+        var pattern = namePattern.Replace("*", "");
+        
+        foreach (var child in children)
+        {
+            var name = child.GetName();
+            if (!string.IsNullOrEmpty(name))
+            {
+                if (namePattern.Contains("*"))
+                {
+                    // Pattern matching: "day_*" matches "day_1", "day_2", etc.
+                    if (namePattern.StartsWith("*") && namePattern.EndsWith("*"))
+                    {
+                        if (name.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            yield return child;
+                        }
+                    }
+                    else if (namePattern.StartsWith("*"))
+                    {
+                        if (name.EndsWith(pattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            yield return child;
+                        }
+                    }
+                    else if (namePattern.EndsWith("*"))
+                    {
+                        if (name.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            yield return child;
+                        }
+                    }
+                }
+                else
+                {
+                    // Exact match
+                    if (name.Equals(namePattern, StringComparison.OrdinalIgnoreCase))
+                    {
+                        yield return child;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets the native window handle from a FlaUI Window.
     /// </summary>
     /// <param name="window">FlaUI Window</param>
