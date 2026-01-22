@@ -13,3 +13,4 @@ Feature: HIPOS login
     When I click Yes on the confirmation messagebox
     When I click OK on the counting button
     When I click OK on the preview doc confirmation modal
+    Then the main menu page should display all required elements

@@ -118,6 +118,9 @@ namespace Hipos.Tests.Features
 #line 15
     await testRunner.WhenAsync("I click OK on the preview doc confirmation modal", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
+#line 16
+    await testRunner.ThenAsync("the main menu page should display all required elements", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }

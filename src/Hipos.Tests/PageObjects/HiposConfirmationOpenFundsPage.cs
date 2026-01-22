@@ -9,12 +9,12 @@ namespace Hipos.Tests.PageObjects;
 /// Page Object for the HIPOS OpenFunds confirmation modal.
 /// Handles interactions with the preview_doc confirmation dialog.
 /// </summary>
-public class ConfirmationOpenFundsPage : BasePage
+public class HiposConfirmationOpenFundsPage : BasePage
 {
     private static readonly string[] PreviewDocPath = { "preview_doc" };
     private static readonly string[] OkButtonPath = { "preview_doc", "button_Ok" };
 
-    public ConfirmationOpenFundsPage(Window window) : base(window)
+    public HiposConfirmationOpenFundsPage(Window window) : base(window)
     {
     }
 

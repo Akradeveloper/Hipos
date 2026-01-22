@@ -14,7 +14,8 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
     private HiposCalendarPage? _calendarPage;
     private HiposConfirmationPage? _confirmationPage;
     private HiposOpenFundsPage? _openFundsPage;
-    private ConfirmationOpenFundsPage? _confirmationOpenFundsPage;
+    private HiposConfirmationOpenFundsPage? _confirmationOpenFundsPage;
+    private HiposMainMenuPage? _mainMenuPage;
 
     [Given("the HIPOS login page is open")]
     public void GivenTheHiposLoginPageIsOpen()
@@ -186,7 +187,7 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
         // Crear o reutilizar la instancia del confirmation open funds page
         if (_confirmationOpenFundsPage == null)
         {
-            _confirmationOpenFundsPage = new ConfirmationOpenFundsPage(MainWindow!);
+            _confirmationOpenFundsPage = new HiposConfirmationOpenFundsPage(MainWindow!);
         }
 
         try
@@ -220,6 +221,52 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
         catch (InvalidOperationException ex)
         {
             LogFail($"Error al interactuar con la modal preview_doc: {ex.Message}", ex);
+            throw;
+        }
+    }
+
+    [Then("the main menu page should display all required elements")]
+    public void ThenTheMainMenuPageShouldDisplayAllRequiredElements()
+    {
+        LogInfo("Verificando que todos los elementos requeridos del menú principal estén presentes");
+
+        // Asegurarse de que tenemos la ventana principal
+        Assert.That(MainWindow, Is.Not.Null, "La ventana principal de HIPOS debe estar disponible");
+
+        // Crear o reutilizar la instancia del main menu page
+        if (_mainMenuPage == null)
+        {
+            _mainMenuPage = new HiposMainMenuPage(MainWindow!);
+        }
+
+        try
+        {
+            // Verificar que todos los elementos existen
+            var allElementsExist = _mainMenuPage.VerifyAllElementsExist();
+
+            Assert.That(
+                allElementsExist,
+                Is.True,
+                "Todos los elementos requeridos del menú principal (receipt, receiptinfo, article_info, main_data, keypad) deben estar presentes");
+
+            // Verificación individual para logging detallado
+            var receiptExists = _mainMenuPage.VerifyReceiptExists();
+            var receiptInfoExists = _mainMenuPage.VerifyReceiptInfoExists();
+            var articleInfoExists = _mainMenuPage.VerifyArticleInfoExists();
+            var mainDataExists = _mainMenuPage.VerifyMainDataExists();
+            var keypadExists = _mainMenuPage.VerifyKeypadExists();
+
+            Assert.That(receiptExists, Is.True, "El elemento 'receipt' debe existir en el menú principal");
+            Assert.That(receiptInfoExists, Is.True, "El elemento 'receiptinfo' debe existir en el menú principal");
+            Assert.That(articleInfoExists, Is.True, "El elemento 'article_info' debe existir en el menú principal");
+            Assert.That(mainDataExists, Is.True, "El elemento 'main_data' debe existir en el menú principal");
+            Assert.That(keypadExists, Is.True, "El elemento 'keypad' debe existir en el menú principal");
+
+            LogPass("Todos los elementos requeridos del menú principal están presentes: receipt, receiptinfo, article_info, main_data, keypad");
+        }
+        catch (InvalidOperationException ex)
+        {
+            LogFail($"Error al verificar los elementos del menú principal: {ex.Message}", ex);
             throw;
         }
     }
