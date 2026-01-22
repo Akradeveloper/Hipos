@@ -25,6 +25,7 @@ Hipos is a complete UI automation framework for Windows applications (Win32, WPF
 - **ExtentReports 5**: Interactive and visual HTML reports with dark theme
 - **Cucumber JSON**: Compatible with Jira/Xray for test management integration
 - **Automatic Screenshots**: Evidence capture on any test failure
+- **Video Recording**: Optional screen recording for test execution (successful and failed)
 - **Detailed Logs**: Serilog with different levels and configurable format
 - **CI Artifacts**: Result export for continuous integration
 

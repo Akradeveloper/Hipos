@@ -112,6 +112,7 @@ The report includes:
 - ✅ Status of each test (passed/failed)
 - 📊 Charts and statistics
 - 📸 Screenshots of failures
+- 🎥 Videos of test execution (if video recording is enabled)
 - 📄 Detailed logs
 - 🏷️ Tags and categories
 - 🌙 Dark theme
@@ -160,6 +161,13 @@ Configure the application to test in `src/Hipos.Tests/appsettings.json`:
     "CucumberJsonPath": "reports/cucumber.json",
     "IncludeScreenshots": true
   },
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "Always",
+    "VideoDirectory": "reports/videos",
+    "FrameRate": 10,
+    "Quality": "medium"
+  },
   "Serilog": {
     "MinimumLevel": "Information",
     "WriteTo": [
@@ -187,6 +195,11 @@ Configure the application to test in `src/Hipos.Tests/appsettings.json`:
 - `Timeouts.ResponseTimeWindow`: Number of response times to track (default: 10)
 - `Reporting.CucumberJsonPath`: Path for Jira/Xray compatible JSON
 - `Reporting.IncludeScreenshots`: Include screenshots in JSON (base64)
+- `VideoRecording.Enabled`: Enable video recording (requires FFmpeg)
+- `VideoRecording.Mode`: When to record: `"Always"`, `"OnFailure"`, `"OnSuccess"`, or `"Disabled"`
+- `VideoRecording.VideoDirectory`: Directory to save videos (default: `"reports/videos"`)
+- `VideoRecording.FrameRate`: Frames per second (default: 10)
+- `VideoRecording.Quality`: Video quality: `"low"`, `"medium"`, or `"high"` (default: `"medium"`)
 
 **Note:** MSAA selectors are now defined as static constants in PageObjects, not in `appsettings.json`. See [Framework Guide](./framework-guide.md) for details.
 

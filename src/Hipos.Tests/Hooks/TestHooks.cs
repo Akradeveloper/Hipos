@@ -128,6 +128,60 @@ public class TestHooks
         
         // Guardar el nombre del escenario en el contexto para uso posterior
         scenarioContext["ScenarioTitle"] = scenarioTitle;
+        
+        // Iniciar grabación de video si está habilitada
+        StartVideoRecordingIfNeeded(scenarioTitle, scenarioContext);
+    }
+    
+    /// <summary>
+    /// Inicia la grabación de video si está habilitada y el modo lo requiere.
+    /// </summary>
+    private void StartVideoRecordingIfNeeded(string scenarioTitle, ScenarioContext scenarioContext)
+    {
+        try
+        {
+            if (!_config.VideoRecordingEnabled)
+            {
+                return;
+            }
+
+            var mode = _config.VideoRecordingMode;
+            
+            // Determinar si debemos iniciar la grabación según el modo
+            // "Always" y "OnSuccess" inician al principio
+            // "OnFailure" no inicia hasta que sepamos que falló
+            bool shouldStartRecording = mode.Equals("Always", StringComparison.OrdinalIgnoreCase) ||
+                                       mode.Equals("OnSuccess", StringComparison.OrdinalIgnoreCase);
+
+            if (shouldStartRecording)
+            {
+                var videoDirectory = Path.Combine(Directory.GetCurrentDirectory(), _config.VideoDirectory);
+                var frameRate = _config.VideoFrameRate;
+                var quality = _config.VideoQuality;
+
+                var started = VideoRecorder.StartRecording(scenarioTitle, videoDirectory, frameRate, quality);
+                if (started)
+                {
+                    Log.Information("Grabación de video iniciada para escenario: {ScenarioTitle} (modo: {Mode})", 
+                        scenarioTitle, mode);
+                    scenarioContext["VideoRecordingStarted"] = true;
+                }
+                else
+                {
+                    Log.Warning("No se pudo iniciar la grabación de video para escenario: {ScenarioTitle}", scenarioTitle);
+                    scenarioContext["VideoRecordingStarted"] = false;
+                }
+            }
+            else
+            {
+                scenarioContext["VideoRecordingStarted"] = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al intentar iniciar grabación de video para escenario: {ScenarioTitle}", scenarioTitle);
+            scenarioContext["VideoRecordingStarted"] = false;
+        }
     }
 
     [BeforeStep]
@@ -168,9 +222,13 @@ public class TestHooks
         Log.Information("Scenario {ScenarioTitle} finished with status: {Status}", scenarioTitle, testStatus);
         
         string? screenshotPath = null;
+        string? videoPath = null;
         
         try
         {
+            // Manejar grabación de video
+            videoPath = HandleVideoRecording(scenarioTitle, testStatus, scenarioContext);
+            
             // Si el escenario falló, capturar screenshot y adjuntarlo
             if (testStatus == ScenarioExecutionStatus.TestError || 
                 testStatus == ScenarioExecutionStatus.BindingError ||
@@ -525,6 +583,94 @@ public class TestHooks
         catch (Exception ex)
         {
             Log.Warning(ex, "No se pudieron adjuntar los logs al reporte");
+        }
+    }
+
+    /// <summary>
+    /// Maneja la grabación de video: detiene la grabación y decide si guardarla según el modo y resultado.
+    /// </summary>
+    private string? HandleVideoRecording(string scenarioTitle, ScenarioExecutionStatus testStatus, ScenarioContext scenarioContext)
+    {
+        try
+        {
+            if (!_config.VideoRecordingEnabled)
+            {
+                return null;
+            }
+
+            var mode = _config.VideoRecordingMode;
+            var wasRecordingStarted = scenarioContext.Get<bool>("VideoRecordingStarted");
+            
+            // Si el modo es "OnFailure" y el test falló, iniciar grabación ahora (aunque sea tarde, 
+            // al menos capturamos el estado final)
+            if (mode.Equals("OnFailure", StringComparison.OrdinalIgnoreCase) && 
+                (testStatus == ScenarioExecutionStatus.TestError || 
+                 testStatus == ScenarioExecutionStatus.BindingError ||
+                 testStatus == ScenarioExecutionStatus.UndefinedStep))
+            {
+                if (!wasRecordingStarted)
+                {
+                    // Iniciar grabación rápida para capturar al menos el estado final
+                    var videoDirectory = Path.Combine(Directory.GetCurrentDirectory(), _config.VideoDirectory);
+                    VideoRecorder.StartRecording(scenarioTitle + "_failure", videoDirectory, 
+                        _config.VideoFrameRate, _config.VideoQuality);
+                    Thread.Sleep(1000); // Grabar 1 segundo al menos
+                }
+            }
+
+            // Detener grabación si estaba activa
+            string? videoPath = null;
+            if (wasRecordingStarted || VideoRecorder.IsRecording)
+            {
+                videoPath = VideoRecorder.StopRecording();
+            }
+
+            // Determinar si debemos guardar el video según el modo y resultado
+            bool shouldSaveVideo = false;
+            
+            if (mode.Equals("Always", StringComparison.OrdinalIgnoreCase))
+            {
+                shouldSaveVideo = true;
+            }
+            else if (mode.Equals("OnFailure", StringComparison.OrdinalIgnoreCase) &&
+                     (testStatus == ScenarioExecutionStatus.TestError || 
+                      testStatus == ScenarioExecutionStatus.BindingError ||
+                      testStatus == ScenarioExecutionStatus.UndefinedStep))
+            {
+                shouldSaveVideo = true;
+            }
+            else if (mode.Equals("OnSuccess", StringComparison.OrdinalIgnoreCase) &&
+                     testStatus == ScenarioExecutionStatus.OK)
+            {
+                shouldSaveVideo = true;
+            }
+
+            if (shouldSaveVideo && !string.IsNullOrEmpty(videoPath) && File.Exists(videoPath))
+            {
+                Log.Information("Video guardado para escenario '{ScenarioTitle}': {VideoPath}", scenarioTitle, videoPath);
+                ExtentReportManager.AttachVideo(videoPath);
+                return videoPath;
+            }
+            else if (!string.IsNullOrEmpty(videoPath) && File.Exists(videoPath))
+            {
+                // Eliminar video si no debe guardarse
+                Log.Debug("Eliminando video que no debe guardarse (modo: {Mode}, estado: {Status})", mode, testStatus);
+                VideoRecorder.DeleteVideo(videoPath);
+                return null;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al manejar grabación de video para escenario: {ScenarioTitle}", scenarioTitle);
+            // Asegurar que la grabación se detenga incluso si hay error
+            try
+            {
+                VideoRecorder.StopRecording();
+            }
+            catch { }
+            return null;
         }
     }
 
