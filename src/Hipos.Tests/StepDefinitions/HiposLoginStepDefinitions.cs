@@ -14,6 +14,7 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
     private HiposCalendarPage? _calendarPage;
     private HiposConfirmationPage? _confirmationPage;
     private HiposOpenFundsPage? _openFundsPage;
+    private ConfirmationOpenFundsPage? _confirmationOpenFundsPage;
 
     [Given("the HIPOS login page is open")]
     public void GivenTheHiposLoginPageIsOpen()
@@ -170,6 +171,55 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
         catch (InvalidOperationException ex)
         {
             LogFail($"Error al hacer clic en el botón OK del counting button: {ex.Message}", ex);
+            throw;
+        }
+    }
+
+    [When("I click OK on the preview doc confirmation modal")]
+    public void WhenIClickOkOnThePreviewDocConfirmationModal()
+    {
+        LogInfo("Esperando a que aparezca la modal de confirmación preview_doc");
+
+        // Asegurarse de que tenemos la ventana principal
+        Assert.That(MainWindow, Is.Not.Null, "La ventana principal de HIPOS debe estar disponible");
+
+        // Crear o reutilizar la instancia del confirmation open funds page
+        if (_confirmationOpenFundsPage == null)
+        {
+            _confirmationOpenFundsPage = new ConfirmationOpenFundsPage(MainWindow!);
+        }
+
+        try
+        {
+            // Esperar a que aparezca la modal
+            var previewDocAppeared = _confirmationOpenFundsPage.WaitForPreviewDocToAppear();
+            
+            Assert.That(
+                previewDocAppeared,
+                Is.True,
+                "La modal preview_doc debería aparecer");
+
+            LogPass("Modal preview_doc apareció correctamente");
+
+            // Hacer clic en el botón OK
+            _confirmationOpenFundsPage.ClickOkButton();
+            LogPass("Clic en el botón 'OK' de preview_doc realizado exitosamente");
+
+            // Opcionalmente, esperar a que desaparezca la modal
+            var previewDocDisappeared = _confirmationOpenFundsPage.WaitForPreviewDocToDisappear();
+            
+            if (previewDocDisappeared)
+            {
+                LogPass("Modal preview_doc desapareció después de hacer clic en 'OK'");
+            }
+            else
+            {
+                LogWarning("La modal preview_doc no desapareció después del timeout esperado");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            LogFail($"Error al interactuar con la modal preview_doc: {ex.Message}", ex);
             throw;
         }
     }

@@ -12,3 +12,4 @@ Feature: HIPOS login
     Then the date_picker element should not exist
     When I click Yes on the confirmation messagebox
     When I click OK on the counting button
+    When I click OK on the preview doc confirmation modal
