@@ -17,14 +17,14 @@ public class HiposCalendarPage : BasePage
     }
 
     /// <summary>
-    /// Selects the last available day in the calendar.
-    /// Iterates through all day elements in reverse order and selects the first one that is not unavailable.
+    /// Selects a random available day in the calendar.
+    /// Finds all available days and selects one randomly from the list.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if no available day is found or if the date_picker element does not exist</exception>
     public void SelectLastAvailableDay()
     {
         EnsureWindowInForeground();
-        Log.Information("Buscando el último día disponible en el calendario");
+        Log.Information("Buscando días disponibles en el calendario para selección aleatoria");
 
         // Verificar que el date_picker existe
         if (!ElementExistsByPath(DatePickerPath))
@@ -68,22 +68,14 @@ public class HiposCalendarPage : BasePage
                 "No se encontró ningún día disponible en el calendario. Todos los días están marcados como 'unavailable'.");
         }
 
-        // Seleccionar el día disponible que está 7 días antes del último día disponible
-        // Si hay menos de 8 días disponibles, seleccionar el primero disponible (índice 0)
-        int targetIndex = availableDays.Count > 7 ? 7 : 0;
-        var targetDay = availableDays[targetIndex];
+        // Seleccionar un día aleatorio de todos los días disponibles
+        var random = new Random();
+        int randomIndex = random.Next(0, availableDays.Count);
+        var targetDay = availableDays[randomIndex];
         var targetDayName = targetDay.element.GetName();
 
-        if (availableDays.Count > 7)
-        {
-            Log.Information("Seleccionando día disponible 7 días antes del último: {DayName} (posición {Position} de {Total} días disponibles)", 
-                targetDayName, targetIndex + 1, availableDays.Count);
-        }
-        else
-        {
-            Log.Information("Solo hay {Count} días disponibles, seleccionando el primero disponible: {DayName}", 
-                availableDays.Count, targetDayName);
-        }
+        Log.Information("Seleccionando día aleatorio disponible: {DayName} (posición {Position} de {Total} días disponibles)", 
+            targetDayName, randomIndex + 1, availableDays.Count);
         
         targetDay.element.Click();
         
