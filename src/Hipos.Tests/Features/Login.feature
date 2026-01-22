@@ -10,3 +10,4 @@ Feature: HIPOS login
     Then the datactrl element should not exist
     When I select the last available day in the calendar
     Then the date_picker element should not exist
+    When I click Yes on the confirmation messagebox

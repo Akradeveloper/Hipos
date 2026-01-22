@@ -12,6 +12,7 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
 {
     private HiposLoginPage? _loginPage;
     private HiposCalendarPage? _calendarPage;
+    private HiposConfirmationPage? _confirmationPage;
 
     [Given("the HIPOS login page is open")]
     public void GivenTheHiposLoginPageIsOpen()
@@ -95,6 +96,55 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
             "El elemento 'date_picker' debería desaparecer después de seleccionar un día");
 
         LogPass("date_picker ya no existe después de seleccionar el día");
+    }
+
+    [When("I click Yes on the confirmation messagebox")]
+    public void WhenIClickYesOnTheConfirmationMessagebox()
+    {
+        LogInfo("Esperando a que aparezca el messagebox de confirmación");
+
+        // Asegurarse de que tenemos la ventana principal
+        Assert.That(MainWindow, Is.Not.Null, "La ventana principal de HIPOS debe estar disponible");
+
+        // Crear o reutilizar la instancia del confirmation page
+        if (_confirmationPage == null)
+        {
+            _confirmationPage = new HiposConfirmationPage(MainWindow!);
+        }
+
+        try
+        {
+            // Esperar a que aparezca el messagebox
+            var messageBoxAppeared = _confirmationPage.WaitForMessageBoxToAppear();
+            
+            Assert.That(
+                messageBoxAppeared,
+                Is.True,
+                "El messagebox de confirmación debería aparecer");
+
+            LogPass("Messagebox de confirmación apareció correctamente");
+
+            // Hacer clic en el botón Yes
+            _confirmationPage.ClickYesButton();
+            LogPass("Clic en el botón 'Yes' realizado exitosamente");
+
+            // Opcionalmente, esperar a que desaparezca el messagebox
+            var messageBoxDisappeared = _confirmationPage.WaitForMessageBoxToDisappear();
+            
+            if (messageBoxDisappeared)
+            {
+                LogPass("Messagebox desapareció después de hacer clic en 'Yes'");
+            }
+            else
+            {
+                LogWarning("El messagebox no desapareció después del timeout esperado");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            LogFail($"Error al interactuar con el messagebox de confirmación: {ex.Message}", ex);
+            throw;
+        }
     }
 
     private Window WaitForWindowByTitle(string titlePart, int timeoutMs)

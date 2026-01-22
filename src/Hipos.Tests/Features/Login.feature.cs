@@ -109,6 +109,9 @@ namespace Hipos.Tests.Features
 #line 12
     await testRunner.ThenAsync("the date_picker element should not exist", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
+#line 13
+    await testRunner.WhenAsync("I click Yes on the confirmation messagebox", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }
