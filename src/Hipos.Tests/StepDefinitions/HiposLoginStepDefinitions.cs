@@ -13,6 +13,7 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
     private HiposLoginPage? _loginPage;
     private HiposCalendarPage? _calendarPage;
     private HiposConfirmationPage? _confirmationPage;
+    private HiposOpenFundsPage? _openFundsPage;
 
     [Given("the HIPOS login page is open")]
     public void GivenTheHiposLoginPageIsOpen()
@@ -143,6 +144,32 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
         catch (InvalidOperationException ex)
         {
             LogFail($"Error al interactuar con el messagebox de confirmación: {ex.Message}", ex);
+            throw;
+        }
+    }
+
+    [When("I click OK on the counting button")]
+    public void WhenIClickOkOnTheCountingButton()
+    {
+        LogInfo("Haciendo clic en el botón OK del counting button");
+
+        // Asegurarse de que tenemos la ventana principal
+        Assert.That(MainWindow, Is.Not.Null, "La ventana principal de HIPOS debe estar disponible");
+
+        // Crear o reutilizar la instancia del open funds page
+        if (_openFundsPage == null)
+        {
+            _openFundsPage = new HiposOpenFundsPage(MainWindow!);
+        }
+
+        try
+        {
+            _openFundsPage.ClickOkButton();
+            LogPass("Clic en el botón 'OK' del counting button realizado exitosamente");
+        }
+        catch (InvalidOperationException ex)
+        {
+            LogFail($"Error al hacer clic en el botón OK del counting button: {ex.Message}", ex);
             throw;
         }
     }

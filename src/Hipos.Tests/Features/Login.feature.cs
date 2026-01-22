@@ -112,6 +112,9 @@ namespace Hipos.Tests.Features
 #line 13
     await testRunner.WhenAsync("I click Yes on the confirmation messagebox", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
+#line 14
+    await testRunner.WhenAsync("I click OK on the counting button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }

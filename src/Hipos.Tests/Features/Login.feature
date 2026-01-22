@@ -11,3 +11,4 @@ Feature: HIPOS login
     When I select the last available day in the calendar
     Then the date_picker element should not exist
     When I click Yes on the confirmation messagebox
+    When I click OK on the counting button
