@@ -45,7 +45,7 @@ public class HiposCalendarPage : BasePage
         Log.Debug("Se encontraron {Count} elementos de día en el calendario", dayElements.Count);
 
         // Primero, encontrar todos los días disponibles
-        var availableDays = new List<(int index, AutomationElement element)>();
+        var availableDays = new List<(int index, MsaaHelper.MsaaElement element)>();
         
         for (int i = dayElements.Count - 1; i >= 0; i--)
         {
