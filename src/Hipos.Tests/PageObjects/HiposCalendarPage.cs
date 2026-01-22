@@ -44,7 +44,9 @@ public class HiposCalendarPage : BasePage
 
         Log.Debug("Se encontraron {Count} elementos de día en el calendario", dayElements.Count);
 
-        // Iterar en orden inverso (del último al primero) para encontrar el último día disponible
+        // Primero, encontrar todos los días disponibles
+        var availableDays = new List<(int index, AutomationElement element)>();
+        
         for (int i = dayElements.Count - 1; i >= 0; i--)
         {
             var dayElement = dayElements[i];
@@ -55,24 +57,40 @@ public class HiposCalendarPage : BasePage
             // Verificar si el día está disponible (no unavailable)
             if (!dayElement.IsUnavailable())
             {
-                Log.Information("Día disponible encontrado: {DayName}. Seleccionando...", dayName);
-                dayElement.Click();
-                
-                // Pequeña espera para que la selección se procese
-                System.Threading.Thread.Sleep(200);
-                
-                Log.Information("Día seleccionado exitosamente: {DayName}", dayName);
-                return;
-            }
-            else
-            {
-                Log.Debug("Día {DayName} está unavailable, continuando búsqueda...", dayName);
+                availableDays.Add((i, dayElement));
+                Log.Debug("Día disponible encontrado: {DayName} (índice: {Index})", dayName, i);
             }
         }
 
-        // Si llegamos aquí, no se encontró ningún día disponible
-        throw new InvalidOperationException(
-            "No se encontró ningún día disponible en el calendario. Todos los días están marcados como 'unavailable'.");
+        if (availableDays.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "No se encontró ningún día disponible en el calendario. Todos los días están marcados como 'unavailable'.");
+        }
+
+        // Seleccionar el día disponible que está 7 días antes del último día disponible
+        // Si hay menos de 8 días disponibles, seleccionar el primero disponible (índice 0)
+        int targetIndex = availableDays.Count > 7 ? 7 : 0;
+        var targetDay = availableDays[targetIndex];
+        var targetDayName = targetDay.element.GetName();
+
+        if (availableDays.Count > 7)
+        {
+            Log.Information("Seleccionando día disponible 7 días antes del último: {DayName} (posición {Position} de {Total} días disponibles)", 
+                targetDayName, targetIndex + 1, availableDays.Count);
+        }
+        else
+        {
+            Log.Information("Solo hay {Count} días disponibles, seleccionando el primero disponible: {DayName}", 
+                availableDays.Count, targetDayName);
+        }
+        
+        targetDay.element.Click();
+        
+        // Pequeña espera para que la selección se procese
+        System.Threading.Thread.Sleep(200);
+        
+        Log.Information("Día seleccionado exitosamente: {DayName}", targetDayName);
     }
 
     /// <summary>
