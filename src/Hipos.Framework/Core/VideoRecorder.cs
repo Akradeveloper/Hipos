@@ -79,9 +79,12 @@ public static class VideoRecorder
 
                 // Preparar argumentos de FFmpeg para captura de pantalla
                 // Usa gdigrab para capturar el escritorio en Windows
+                // -movflags +faststart: permite reproducir el video mientras se está grabando
+                // -tune zerolatency: reduce la latencia para mejor finalización
                 var arguments = $"-f gdigrab -framerate {frameRate} -i desktop " +
                                $"-vf \"scale=iw*{videoQuality.ScaleFactor}:ih*{videoQuality.ScaleFactor}\" " +
                                $"-c:v libx264 -preset {videoQuality.Preset} -crf {videoQuality.Crf} " +
+                               $"-tune zerolatency -movflags +faststart " +
                                $"-pix_fmt yuv420p -y \"{_currentVideoPath}\"";
 
                 var startInfo = new ProcessStartInfo
@@ -96,15 +99,39 @@ public static class VideoRecorder
                 };
 
                 _ffmpegProcess = new Process { StartInfo = startInfo };
+                
+                // Iniciar captura asíncrona de errores para debugging
+                var errorOutput = new System.Text.StringBuilder();
+                _ffmpegProcess.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        errorOutput.AppendLine(e.Data);
+                        // Log errores importantes en tiempo real
+                        if (e.Data.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                            e.Data.Contains("failed", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Log.Warning("FFmpeg: {ErrorLine}", e.Data);
+                        }
+                    }
+                };
+                
                 _ffmpegProcess.Start();
+                _ffmpegProcess.BeginErrorReadLine();
 
                 // Esperar un momento para verificar que inició correctamente
-                Thread.Sleep(500);
+                Thread.Sleep(1000);
                 
-                if (_ffmpegProcess.HasExited && _ffmpegProcess.ExitCode != 0)
+                if (_ffmpegProcess.HasExited)
                 {
-                    var error = _ffmpegProcess.StandardError.ReadToEnd();
-                    Log.Error("FFmpeg falló al iniciar: {Error}", error);
+                    var error = errorOutput.ToString();
+                    if (string.IsNullOrEmpty(error))
+                    {
+                        error = _ffmpegProcess.StandardError.ReadToEnd();
+                    }
+                    Log.Error("FFmpeg falló al iniciar (código: {ExitCode}). Error: {Error}", 
+                        _ffmpegProcess.ExitCode, error);
+                    Log.Error("Argumentos usados: {Arguments}", arguments);
                     _ffmpegProcess.Dispose();
                     _ffmpegProcess = null;
                     _currentVideoPath = null;
@@ -142,30 +169,46 @@ public static class VideoRecorder
 
             try
             {
+                var videoPath = _currentVideoPath;
+                
                 // Enviar señal de terminación a FFmpeg (q para salir graciosamente)
                 if (!_ffmpegProcess.HasExited)
                 {
                     try
                     {
+                        Log.Debug("Enviando señal de terminación a FFmpeg...");
                         _ffmpegProcess.StandardInput.Write('q');
                         _ffmpegProcess.StandardInput.Flush();
                         _ffmpegProcess.StandardInput.Close();
+                        
+                        // Dar tiempo a FFmpeg para que finalice correctamente el archivo
+                        // Esperar hasta 10 segundos para que termine graciosamente
+                        if (!_ffmpegProcess.WaitForExit(10000))
+                        {
+                            Log.Warning("FFmpeg no terminó en 10 segundos, forzando cierre...");
+                            _ffmpegProcess.Kill();
+                            _ffmpegProcess.WaitForExit(3000);
+                        }
+                        else
+                        {
+                            Log.Debug("FFmpeg terminó correctamente (código: {ExitCode})", _ffmpegProcess.ExitCode);
+                        }
                     }
                     catch (Exception ex)
                     {
                         Log.Debug(ex, "No se pudo enviar señal de terminación a FFmpeg, forzando cierre...");
-                    }
-                    
-                    // Esperar a que termine (máximo 5 segundos)
-                    if (!_ffmpegProcess.WaitForExit(5000))
-                    {
-                        Log.Warning("FFmpeg no terminó en 5 segundos, forzando cierre...");
-                        _ffmpegProcess.Kill();
-                        _ffmpegProcess.WaitForExit(2000);
+                        try
+                        {
+                            _ffmpegProcess.Kill();
+                            _ffmpegProcess.WaitForExit(3000);
+                        }
+                        catch { }
                     }
                 }
 
-                var videoPath = _currentVideoPath;
+                // Esperar un momento adicional para asegurar que el archivo se escribió completamente
+                Thread.Sleep(500);
+                
                 _ffmpegProcess.Dispose();
                 _ffmpegProcess = null;
                 _isRecording = false;
