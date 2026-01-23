@@ -63,14 +63,16 @@ public static class VideoRecorder
                 var fileName = $"{sanitizedTestName}_{timestamp}.mp4";
                 _currentVideoPath = Path.Combine(videoDirectory, fileName);
 
-                // Buscar FFmpeg en PATH o ubicaciones comunes
+                // Buscar FFmpeg (prioriza tools/ffmpeg/ffmpeg.exe del proyecto)
                 var ffmpegPath = FindFfmpeg();
                 if (string.IsNullOrEmpty(ffmpegPath))
                 {
                     Log.Warning("FFmpeg no encontrado. La grabación de video no está disponible.");
-                    Log.Information("Para habilitar grabación de video, instala FFmpeg y agrégalo al PATH, o coloca ffmpeg.exe en el directorio del proyecto.");
+                    Log.Information("Para habilitar grabación de video, coloca ffmpeg.exe en: tools/ffmpeg/ffmpeg.exe");
                     return false;
                 }
+
+                Log.Debug("Usando FFmpeg desde: {FfmpegPath}", ffmpegPath);
 
                 // Configurar parámetros de calidad
                 var videoQuality = GetQualitySettings(quality, frameRate);
@@ -250,29 +252,40 @@ public static class VideoRecorder
     }
 
     /// <summary>
-    /// Busca FFmpeg en el PATH o ubicaciones comunes.
+    /// Busca FFmpeg en ubicaciones del proyecto primero, luego en PATH.
+    /// Prioriza tools/ffmpeg/ffmpeg.exe dentro del proyecto.
     /// </summary>
     private static string? FindFfmpeg()
     {
-        // Buscar en PATH
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-        if (!string.IsNullOrEmpty(pathEnv))
+        Log.Debug("Buscando FFmpeg...");
+
+        // 1. PRIORIDAD: Buscar en tools/ffmpeg/ del proyecto (ubicación preferida)
+        var projectRoot = GetProjectRootDirectory();
+        if (!string.IsNullOrEmpty(projectRoot))
         {
-            var paths = pathEnv.Split(Path.PathSeparator);
-            foreach (var path in paths)
+            var projectFfmpegPath = Path.Combine(projectRoot, "tools", "ffmpeg", "ffmpeg.exe");
+            if (File.Exists(projectFfmpegPath))
             {
-                var ffmpegPath = Path.Combine(path, "ffmpeg.exe");
-                if (File.Exists(ffmpegPath))
-                {
-                    return ffmpegPath;
-                }
+                Log.Information("FFmpeg encontrado en el proyecto: {Path}", projectFfmpegPath);
+                return projectFfmpegPath;
             }
+            Log.Debug("FFmpeg no encontrado en: {Path}", projectFfmpegPath);
         }
 
-        // Buscar en el directorio actual y subdirectorios comunes
+        // 2. Buscar en el directorio de ejecución de la aplicación
+        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        var baseFfmpegPath = Path.Combine(baseDirectory, "ffmpeg.exe");
+        if (File.Exists(baseFfmpegPath))
+        {
+            Log.Information("FFmpeg encontrado en directorio de ejecución: {Path}", baseFfmpegPath);
+            return baseFfmpegPath;
+        }
+
+        // 3. Buscar en el directorio actual y subdirectorios comunes
         var currentDir = Directory.GetCurrentDirectory();
         var commonLocations = new[]
         {
+            Path.Combine(currentDir, "tools", "ffmpeg", "ffmpeg.exe"),
             Path.Combine(currentDir, "ffmpeg.exe"),
             Path.Combine(currentDir, "tools", "ffmpeg.exe"),
             Path.Combine(currentDir, "bin", "ffmpeg.exe"),
@@ -283,11 +296,68 @@ public static class VideoRecorder
         {
             if (File.Exists(location))
             {
+                Log.Information("FFmpeg encontrado en ubicación común: {Path}", location);
                 return location;
             }
         }
 
+        // 4. Buscar en PATH del sistema
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+        if (!string.IsNullOrEmpty(pathEnv))
+        {
+            var paths = pathEnv.Split(Path.PathSeparator);
+            foreach (var path in paths)
+            {
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                var ffmpegPath = Path.Combine(path, "ffmpeg.exe");
+                if (File.Exists(ffmpegPath))
+                {
+                    Log.Information("FFmpeg encontrado en PATH: {Path}", ffmpegPath);
+                    return ffmpegPath;
+                }
+            }
+        }
+
+        Log.Warning("FFmpeg no encontrado en ninguna ubicación. La grabación de video no estará disponible.");
+        Log.Information("Para habilitar grabación de video, coloca ffmpeg.exe en: tools/ffmpeg/ffmpeg.exe (recomendado)");
+        
         return null;
+    }
+
+    /// <summary>
+    /// Intenta obtener el directorio raíz del proyecto buscando archivos característicos.
+    /// </summary>
+    private static string? GetProjectRootDirectory()
+    {
+        try
+        {
+            var currentDir = Directory.GetCurrentDirectory();
+            var directory = new DirectoryInfo(currentDir);
+
+            // Buscar hacia arriba hasta encontrar archivos característicos del proyecto
+            while (directory != null && directory.Exists)
+            {
+                var slnFiles = directory.GetFiles("*.sln");
+                var gitDir = directory.GetDirectories(".git").FirstOrDefault();
+                var toolsDir = directory.GetDirectories("tools").FirstOrDefault();
+
+                if (slnFiles.Length > 0 || gitDir != null || toolsDir != null)
+                {
+                    return directory.FullName;
+                }
+
+                directory = directory.Parent;
+            }
+
+            // Si no se encuentra, usar el directorio actual
+            return Directory.GetCurrentDirectory();
+        }
+        catch
+        {
+            return Directory.GetCurrentDirectory();
+        }
     }
 
     /// <summary>
