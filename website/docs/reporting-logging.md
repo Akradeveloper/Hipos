@@ -37,6 +37,7 @@ The ExtentReports report includes:
 - 📈 **Categories**: Filtering by tags (Smoke, Complex, Demo)
 - ⏱️ **Timeline**: Execution time per test
 - 📸 **Screenshots**: Automatic capture on failures
+- 🎥 **Videos**: Test execution recordings (if video recording is enabled)
 - 📄 **Logs**: Step-by-step test execution logs
 - 🌙 **Dark Theme**: Better readability
 - 💻 **System Info**: Framework, environment, automation tool details
@@ -107,6 +108,112 @@ ExtentReportManager.LogSkip("Test skipped due to...");
 3. `ScreenshotHelper.TakeScreenshot()` captures screen
 4. Screenshot is attached to ExtentReports
 5. Available in report under the failed test
+
+### Video Recording
+
+Hipos supports optional video recording of test execution, providing visual evidence of both successful and failed tests.
+
+#### Configuration
+
+Configure video recording in `appsettings.json`:
+
+```json
+{
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "Always",
+    "VideoDirectory": "reports/videos",
+    "FrameRate": 10,
+    "Quality": "medium"
+  }
+}
+```
+
+**Configuration Options:**
+
+- `Enabled`: Enable/disable video recording (default: `false`)
+- `Mode`: When to record videos:
+  - `"Always"`: Record all tests (successful and failed)
+  - `"OnFailure"`: Only record when tests fail
+  - `"OnSuccess"`: Only record when tests pass
+  - `"Disabled"`: Disable video recording
+- `VideoDirectory`: Directory to save videos (default: `"reports/videos"`)
+- `FrameRate`: Frames per second (default: `10`, recommended: 5-15)
+- `Quality`: Video quality preset:
+  - `"low"`: Smaller file size, lower quality (faster encoding)
+  - `"medium"`: Balanced quality and file size (recommended)
+  - `"high"`: Best quality, larger file size (slower encoding)
+
+#### Requirements
+
+Video recording requires **FFmpeg** to be installed and available in the system PATH, or placed in the project directory.
+
+**Installing FFmpeg:**
+
+1. Download from [ffmpeg.org](https://ffmpeg.org/download.html)
+2. Extract and add to PATH, or place `ffmpeg.exe` in:
+   - Project root directory
+   - `tools/ffmpeg.exe`
+   - `bin/ffmpeg.exe`
+   - `ffmpeg/ffmpeg.exe`
+
+**Verifying FFmpeg:**
+
+```bash
+ffmpeg -version
+```
+
+If FFmpeg is not found, video recording will be automatically disabled and a warning will be logged.
+
+#### How It Works
+
+1. **BeforeScenario**: If recording is enabled and mode requires it, `VideoRecorder.StartRecording()` begins capturing the screen
+2. **During Test**: Video is recorded in the background
+3. **AfterScenario**: 
+   - Recording stops
+   - Based on mode and test result, video is either saved or deleted
+   - Saved videos are automatically attached to ExtentReports
+
+#### Video Files
+
+Videos are saved with descriptive names:
+
+```
+reports/videos/Successful_login_hides_datactrl_20240115_143022.mp4
+```
+
+#### Performance Considerations
+
+- **Frame Rate**: Lower frame rates (5-10 fps) reduce file size and CPU usage
+- **Quality**: Use `"low"` for faster tests, `"medium"` for balance, `"high"` for detailed analysis
+- **Disk Space**: Videos consume more space than screenshots. Consider cleanup policies for CI/CD
+
+#### Example Usage
+
+```csharp
+// Video recording is automatic based on configuration
+// No code changes needed in your tests!
+
+// Configuration example for CI/CD (only record failures):
+{
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "OnFailure",
+    "FrameRate": 8,
+    "Quality": "low"
+  }
+}
+
+// Configuration for local development (record all):
+{
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "Always",
+    "FrameRate": 10,
+    "Quality": "medium"
+  }
+}
+```
 
 ### Test Categories
 

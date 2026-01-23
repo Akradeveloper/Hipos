@@ -84,7 +84,7 @@ namespace Hipos.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Successful login hides datactrl", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 8
+#line 7
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((TagHelper.ContainsIgnoreTag(tagsOfScenario) || TagHelper.ContainsIgnoreTag(featureTags)))
@@ -94,14 +94,32 @@ namespace Hipos.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 9
+#line 8
     await testRunner.GivenAsync("the HIPOS login page is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 10
+#line 9
     await testRunner.WhenAsync("I login with employee \"-1\" and password \"000000\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 11
+#line 10
     await testRunner.ThenAsync("the datactrl element should not exist", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
+#line 11
+    await testRunner.WhenAsync("I select the last available day in the calendar", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
+#line 12
+    await testRunner.ThenAsync("the date_picker element should not exist", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+#line hidden
+#line 13
+    await testRunner.WhenAsync("I click Yes on the confirmation messagebox", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
+#line 14
+    await testRunner.WhenAsync("I click OK on the counting button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
+#line 15
+    await testRunner.WhenAsync("I click OK on the preview doc confirmation modal", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+#line hidden
+#line 16
+    await testRunner.ThenAsync("the main menu page should display all required elements", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

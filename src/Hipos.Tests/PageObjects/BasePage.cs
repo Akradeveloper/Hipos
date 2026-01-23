@@ -80,9 +80,16 @@ public abstract class BasePage
     /// <returns>True if the element disappeared, false if timeout</returns>
     protected bool WaitForElementToDisappear(string[] namePath, int? timeoutMs = null)
     {
-        var timeout = timeoutMs ?? DefaultTimeout;
+        var config = ConfigManager.Instance;
+        var baseTimeout = timeoutMs ?? DefaultTimeout;
+        
+        // Usar timeout adaptativo si está habilitado
+        var timeout = config.AdaptiveTimeoutsEnabled
+            ? AdaptiveTimeoutManager.Instance.GetAdaptiveTimeout(baseTimeout)
+            : baseTimeout;
+        
         var path = string.Join(" > ", namePath);
-        return WaitHelper.WaitUntil(
+        return WaitHelper.WaitUntilAdaptive(
             () => !ElementExistsByPath(namePath),
             timeout,
             conditionDescription: $"elemento MSAA '{path}' desaparezca");
@@ -118,12 +125,80 @@ public abstract class BasePage
         try
         {
             Window.Focus();
-            Thread.Sleep(300); // Small pause for the window to respond
+            // Esperar a que la ventana responda usando wait adaptativo
+            WaitHelper.WaitUntilAdaptive(
+                () => !Window.IsOffscreen,
+                timeoutMs: 500,
+                conditionDescription: "ventana en primer plano");
             Log.Debug("Window brought to foreground in Page Object");
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "Could not bring window to foreground in Page Object");
+        }
+    }
+
+    /// <summary>
+    /// Gets all child elements of an MSAA element identified by its name path.
+    /// </summary>
+    /// <param name="namePath">Path of element names to find</param>
+    /// <returns>Enumerable collection of child elements</returns>
+    protected IEnumerable<MsaaHelper.MsaaElement> GetAllChildrenByPath(params string[] namePath)
+    {
+        var element = FindElementByPath(namePath);
+        return element.GetAllChildren();
+    }
+
+    /// <summary>
+    /// Finds all child elements that match a name pattern.
+    /// </summary>
+    /// <param name="parentPath">Path to the parent element</param>
+    /// <param name="namePattern">Pattern to match (e.g., "day_*" matches elements starting with "day_")</param>
+    /// <returns>Enumerable collection of matching child elements</returns>
+    protected IEnumerable<MsaaHelper.MsaaElement> FindElementsByPattern(string[] parentPath, string namePattern)
+    {
+        var children = GetAllChildrenByPath(parentPath);
+        var pattern = namePattern.Replace("*", "");
+        
+        foreach (var child in children)
+        {
+            var name = child.GetName();
+            if (!string.IsNullOrEmpty(name))
+            {
+                if (namePattern.Contains("*"))
+                {
+                    // Pattern matching: "day_*" matches "day_1", "day_2", etc.
+                    if (namePattern.StartsWith("*") && namePattern.EndsWith("*"))
+                    {
+                        if (name.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            yield return child;
+                        }
+                    }
+                    else if (namePattern.StartsWith("*"))
+                    {
+                        if (name.EndsWith(pattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            yield return child;
+                        }
+                    }
+                    else if (namePattern.EndsWith("*"))
+                    {
+                        if (name.StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            yield return child;
+                        }
+                    }
+                }
+                else
+                {
+                    // Exact match
+                    if (name.Equals(namePattern, StringComparison.OrdinalIgnoreCase))
+                    {
+                        yield return child;
+                    }
+                }
+            }
         }
     }
 

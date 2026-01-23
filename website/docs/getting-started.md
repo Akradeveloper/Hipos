@@ -112,6 +112,7 @@ The report includes:
 - ✅ Status of each test (passed/failed)
 - 📊 Charts and statistics
 - 📸 Screenshots of failures
+- 🎥 Videos of test execution (if video recording is enabled)
 - 📄 Detailed logs
 - 🏷️ Tags and categories
 - 🌙 Dark theme
@@ -149,18 +150,23 @@ Configure the application to test in `src/Hipos.Tests/appsettings.json`:
 {
   "AppPath": "C:\\hiposAut.exe",
   "DefaultTimeout": 15000,
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000,
+    "ResponseTimeWindow": 10
+  },
   "Reporting": {
     "CucumberJsonPath": "reports/cucumber.json",
     "IncludeScreenshots": true
   },
-  "Msaa": {
-    "SearchMaxDepth": 6,
-    "Login": {
-      "EmployeeNamePath": "employee",
-      "PasswordNamePath": "password",
-      "LoginButtonNamePath": "login",
-      "DataCtrlNamePath": "datactrl"
-    }
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "Always",
+    "VideoDirectory": "reports/videos",
+    "FrameRate": 10,
+    "Quality": "medium"
   },
   "Serilog": {
     "MinimumLevel": "Information",
@@ -179,13 +185,23 @@ Configure the application to test in `src/Hipos.Tests/appsettings.json`:
 
 **Important Parameters:**
 - `AppPath`: Path to executable (absolute, relative, or in PATH)
-- `C:\\hiposAut.exe` - HIPOS executable
-- `C:\\MyApp\\App.exe` - Your custom application
-  - `C:\MyApp\App.exe` - Your custom application
+  - `C:\\hiposAut.exe` - HIPOS executable
+  - `C:\\MyApp\\App.exe` - Your custom application
 - `DefaultTimeout`: Timeout in milliseconds (15s recommended for UWP apps)
+- `Timeouts.Adaptive`: Enable adaptive timeouts (automatically adjusts based on app speed)
+- `Timeouts.InitialTimeout`: Initial timeout for adaptive system (default: 5000ms)
+- `Timeouts.MinTimeout`: Minimum timeout allowed (default: 2000ms)
+- `Timeouts.MaxTimeout`: Maximum timeout allowed (default: 30000ms)
+- `Timeouts.ResponseTimeWindow`: Number of response times to track (default: 10)
 - `Reporting.CucumberJsonPath`: Path for Jira/Xray compatible JSON
 - `Reporting.IncludeScreenshots`: Include screenshots in JSON (base64)
-- `Msaa.*`: MSAA name paths and search depth for HIPOS login
+- `VideoRecording.Enabled`: Enable video recording (requires FFmpeg)
+- `VideoRecording.Mode`: When to record: `"Always"`, `"OnFailure"`, `"OnSuccess"`, or `"Disabled"`
+- `VideoRecording.VideoDirectory`: Directory to save videos (default: `"reports/videos"`)
+- `VideoRecording.FrameRate`: Frames per second (default: 10)
+- `VideoRecording.Quality`: Video quality: `"low"`, `"medium"`, or `"high"` (default: `"medium"`)
+
+**Note:** MSAA selectors are now defined as static constants in PageObjects, not in `appsettings.json`. See [Framework Guide](./framework-guide.md) for details.
 
 **Supported Applications:**
 - ✅ Classic Win32 (Notepad, Paint, legacy apps)

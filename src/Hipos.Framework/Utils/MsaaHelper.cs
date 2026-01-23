@@ -84,6 +84,9 @@ public static class MsaaHelper
     {
         private const int ChildIdSelf = 0;
         private const int SelFlagTakeFocus = 0x1;
+        
+        // MSAA State flags
+        private const int STATE_SYSTEM_UNAVAILABLE = 0x1;
 
         public IAccessible Accessible { get; }
         public int ChildId { get; }
@@ -158,6 +161,47 @@ public static class MsaaHelper
                 Log.Warning(ex, "No se pudo ejecutar acción por defecto con MSAA");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Gets all child elements of this MSAA element.
+        /// </summary>
+        /// <returns>Enumerable collection of child elements</returns>
+        public IEnumerable<MsaaElement> GetAllChildren()
+        {
+            return GetChildren();
+        }
+
+        /// <summary>
+        /// Gets the MSAA state of this element.
+        /// </summary>
+        /// <returns>State flags as integer</returns>
+        public int GetState()
+        {
+            try
+            {
+                object? stateObj = Accessible.get_accState(ChildId == ChildIdSelf ? 0 : ChildId);
+                if (stateObj is int state)
+                {
+                    return state;
+                }
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "No se pudo obtener estado MSAA del elemento");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Checks if this element has the "unavailable" state flag.
+        /// </summary>
+        /// <returns>True if the element is unavailable, false otherwise</returns>
+        public bool IsUnavailable()
+        {
+            var state = GetState();
+            return (state & STATE_SYSTEM_UNAVAILABLE) != 0;
         }
 
         private IEnumerable<MsaaElement> GetChildren()

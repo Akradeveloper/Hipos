@@ -50,6 +50,56 @@ public class ConfigManager
     public int DefaultTimeout => int.Parse(GetValue("DefaultTimeout", "5000"));
 
     /// <summary>
+    /// Indica si los timeouts adaptativos están habilitados.
+    /// </summary>
+    public bool AdaptiveTimeoutsEnabled => bool.Parse(GetValue("Timeouts:Adaptive", "false"));
+
+    /// <summary>
+    /// Timeout inicial para timeouts adaptativos.
+    /// </summary>
+    public int InitialTimeout => int.Parse(GetValue("Timeouts:InitialTimeout", "5000"));
+
+    /// <summary>
+    /// Timeout mínimo permitido.
+    /// </summary>
+    public int MinTimeout => int.Parse(GetValue("Timeouts:MinTimeout", "2000"));
+
+    /// <summary>
+    /// Timeout máximo permitido.
+    /// </summary>
+    public int MaxTimeout => int.Parse(GetValue("Timeouts:MaxTimeout", "30000"));
+
+    /// <summary>
+    /// Tamaño de la ventana deslizante para tiempos de respuesta.
+    /// </summary>
+    public int ResponseTimeWindow => int.Parse(GetValue("Timeouts:ResponseTimeWindow", "10"));
+
+    /// <summary>
+    /// Indica si la grabación de video está habilitada.
+    /// </summary>
+    public bool VideoRecordingEnabled => bool.Parse(GetValue("VideoRecording:Enabled", "false"));
+
+    /// <summary>
+    /// Modo de grabación de video: "Always", "OnFailure", "OnSuccess", "Disabled".
+    /// </summary>
+    public string VideoRecordingMode => GetValue("VideoRecording:Mode", "Disabled");
+
+    /// <summary>
+    /// Directorio donde se guardarán los videos.
+    /// </summary>
+    public string VideoDirectory => GetValue("VideoRecording:VideoDirectory", "reports/videos");
+
+    /// <summary>
+    /// Frame rate para la grabación de video.
+    /// </summary>
+    public int VideoFrameRate => int.Parse(GetValue("VideoRecording:FrameRate", "10"));
+
+    /// <summary>
+    /// Calidad del video: "low", "medium", "high".
+    /// </summary>
+    public string VideoQuality => GetValue("VideoRecording:Quality", "medium");
+
+    /// <summary>
     /// Obtiene un valor de configuración por clave.
     /// </summary>
     /// <param name="key">Clave de configuración (puede usar : para anidación)</param>

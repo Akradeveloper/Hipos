@@ -107,17 +107,17 @@ C:\Program Files (x86)\Windows Kits\10\bin\<version>\x64\inspect.exe
 
 #### 2. Element Not Ready
 
-✅ **Solution:** Increase timeout or add specific wait
+✅ **Solution:** Increase timeout or add specific wait with adaptive polling
 
 ```csharp
-// Wait for element to exist with MSAA
-WaitHelper.WaitUntil(
+// Wait for element to exist with MSAA (recommended: adaptive polling)
+WaitHelper.WaitUntilAdaptive(
     () => ElementExistsByPath("Parent", "Button"),
     timeoutMs: 10000,
     conditionDescription: "button exists");
 
-// Or wait for specific condition
-WaitHelper.WaitUntil(
+// Or wait for specific condition with adaptive polling
+WaitHelper.WaitUntilAdaptive(
     () => {
         var element = FindElementByPath("Parent", "Button");
         return element != null;
@@ -125,6 +125,8 @@ WaitHelper.WaitUntil(
     timeoutMs: 5000,
     conditionDescription: "button available");
 ```
+
+**Note:** `WaitUntilAdaptive()` uses adaptive polling (starts fast, increases gradually) and automatically records response times for adaptive timeouts. This is more efficient than fixed polling.
 
 #### 3. Element in Popup/Modal
 
@@ -172,7 +174,7 @@ var result = GetResult();
 ✅ **Solution:**
 ```csharp
 ClickElement("Parent", "Button");
-WaitHelper.WaitUntil(
+WaitHelper.WaitUntilAdaptive(
     () => ElementExistsByPath("Parent", "ResultLabel"),
     timeoutMs: 5000,
     conditionDescription: "result label appears");
@@ -192,7 +194,7 @@ ClickLogin();  // Click before text is fully entered
 ```csharp
 SetElementText("user", "Parent", "Username");
 SetElementText("pass", "Parent", "Password");
-WaitHelper.WaitUntil(
+WaitHelper.WaitUntilAdaptive(
     () => ElementExistsByPath("Parent", "LoginButton"),
     timeoutMs: 5000,
     conditionDescription: "login button available");
@@ -216,19 +218,20 @@ public void BeforeScenario()
 
 #### 4. Animation Timing
 
-✅ **Solution:** Wait for animation to finish
+✅ **Solution:** Wait for animation to finish using adaptive polling
 
 ```csharp
-// Wait for element to be visible AND settled
-WaitHelper.WaitUntil(
-    () => element.IsVisible && element.BoundingRectangle.IsEmpty == false,
-    5000,
-    conditionDescription: "element visible and rendered"
-);
-
-// Additional small delay for animations
-Thread.Sleep(300);
+// Wait for element to be visible AND settled using adaptive polling
+WaitHelper.WaitUntilAdaptive(
+    () => {
+        var element = FindElementByPath("Parent", "AnimatedElement");
+        return element != null && ElementExistsByPath("Parent", "AnimatedElement");
+    },
+    timeoutMs: 5000,
+    conditionDescription: "element visible and rendered");
 ```
+
+**Note:** The framework no longer uses `Thread.Sleep()`. All waits use explicit conditions with adaptive polling for better performance and reliability.
 
 ## Permission Issues
 
@@ -399,12 +402,26 @@ Thread.Sleep(5000);  // Always waits 5 seconds
 
 ✅ **Solution:**
 ```csharp
-WaitHelper.WaitUntil(
+WaitHelper.WaitUntilAdaptive(
     () => ElementExistsByPath("Parent", "ButtonId"),
     timeoutMs: 5000,
     conditionDescription: "button found");
-// Returns immediately when element is found
+// Returns immediately when element is found (uses adaptive polling)
 ```
+
+**Additional optimization:** Enable adaptive timeouts in `appsettings.json`:
+```json
+{
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000
+  }
+}
+```
+
+This automatically adjusts timeouts based on actual app performance, making tests faster when the app is fast and more robust when it's slow.
 
 #### 3. App Launches Slowly
 
@@ -554,9 +571,11 @@ echo $AppPath
 
 **Answer:** 99% of the time it's due to **insufficient or incorrect waits**.
 
-- ❌ Don't use hardcoded `Thread.Sleep()`
-- ✅ Use `WaitHelper.WaitUntil()` with MSAA conditions
+- ❌ Don't use hardcoded `Thread.Sleep()` (the framework no longer uses it)
+- ✅ Use `WaitHelper.WaitUntilAdaptive()` with MSAA conditions (recommended)
+- ✅ Use `WaitHelper.WaitUntil()` with fixed polling if needed
 - ✅ Wait for specific conditions, not arbitrary times
+- ✅ Enable adaptive timeouts for automatic timeout adjustment
 
 ### Can I run tests in parallel?
 

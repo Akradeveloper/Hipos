@@ -24,6 +24,7 @@ graph TB
         AL[AppLauncher]
         TH[TestHooks]
         WH[WaitHelper]
+        ATM[AdaptiveTimeoutManager]
         SH[ScreenshotHelper]
         CM[ConfigManager]
         MH[MsaaHelper]
@@ -48,12 +49,14 @@ graph TB
     HP --> BP
     BP --> WH
     BP --> MH
+    BP --> ATM
     BDD --> TH
     TH --> AL
     TH --> SH
     TH --> CM
     TH --> CJ
     HP --> MH
+    WH --> ATM
     AL --> FlaUI
     TH --> SpecFlow
     TH --> ExtentReports
@@ -188,12 +191,17 @@ sequenceDiagram
 
 #### WaitHelper
 - Explicit waits with retry
-- Configurable polling
+- Fixed and adaptive polling
 - Attempt logging
 - Customizable conditions
+- Automatic response time recording
 
 **Main Methods:**
-- `WaitUntil(condition, timeout)` - Generic wait for any condition
+- `WaitUntil(condition, timeout, pollingInterval)` - Generic wait with fixed polling
+- `WaitUntilAdaptive(condition, timeout)` - Adaptive polling (recommended)
+  - Starts with fast polling (100ms)
+  - Gradually increases if condition doesn't meet
+  - Automatically records response times for adaptive timeouts
 
 **MSAA Interaction Flow:**
 
@@ -227,6 +235,19 @@ sequenceDiagram
 - Support for multiple environments (Development, Production)
 - Environment variables override values
 - Typed properties for easy access
+
+#### AdaptiveTimeoutManager
+- Manages adaptive timeouts based on measured response times
+- Tracks sliding window of response times
+- Calculates timeouts using percentile 95 × safety factor
+- Automatically adjusts timeouts based on app performance
+- Singleton pattern for global timeout management
+
+**Key Features:**
+- Records response times from `WaitUntilAdaptive()`
+- Provides `GetAdaptiveTimeout()` for dynamic timeout calculation
+- Maintains configurable window size (default: 10 measurements)
+- Applies min/max bounds to prevent extreme timeouts
 
 #### CucumberJsonReportGenerator
 - Converts SpecFlow results to Cucumber JSON format
