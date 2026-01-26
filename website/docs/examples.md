@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # Test Examples
 
-Examples focused on HIPOS login using MSAA.
+Examples focused on HIPOS login using MSAA (accessed through FlaUI window handles).
 
 ## SpecFlow Feature
 
@@ -47,7 +47,7 @@ public class HiposLoginStepDefinitions : BaseStepDefinitions
 
 ## Page Object Implementation
 
-MSAA selectors are defined as static constants in the PageObject:
+MSAA selectors are defined as static constants in the PageObject. MSAA interactions use window handles obtained from FlaUI Window objects:
 
 ```csharp
 public class HiposLoginPage : BasePage

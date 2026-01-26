@@ -661,7 +661,8 @@ Possible causes:
 
 - [GitHub Self-Hosted Runners](https://docs.github.com/en/actions/hosting-your-own-runners)
 - [Azure DevOps Agents](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/agents)
-- [FlaUI CI Best Practices](https://github.com/FlaUI/FlaUI/wiki)
+- [FlaUI CI Best Practices](https://github.com/FlaUI/FlaUI/wiki) - For window management in CI/CD
+- **Note:** Hipos uses FlaUI for window management and MSAA (via FlaUI handles) for UI interactions
 - [Xray API Documentation](https://docs.getxray.app/display/XRAYCLOUD/Import+Execution+Results+-+REST+v2)
 
 ## Next Steps

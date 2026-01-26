@@ -203,18 +203,21 @@ sequenceDiagram
   - Gradually increases if condition doesn't meet
   - Automatically records response times for adaptive timeouts
 
-**MSAA Interaction Flow:**
+**MSAA Interaction Flow (via FlaUI):**
 
 ```mermaid
 sequenceDiagram
     participant Test
     participant BasePage
+    participant FlaUI
     participant MsaaHelper
     participant MSAA
     
     Test->>BasePage: ClickElement("Parent", "Button")
+    BasePage->>FlaUI: Get NativeWindowHandle from Window
+    FlaUI-->>BasePage: IntPtr (window handle)
     BasePage->>MsaaHelper: FindByNamePath(handle, path)
-    MsaaHelper->>MSAA: IAccessible navigation
+    MsaaHelper->>MSAA: IAccessible navigation (using handle from FlaUI)
     MSAA-->>MsaaHelper: Element found
     MsaaHelper-->>BasePage: MsaaElement
     BasePage->>MsaaHelper: MsaaElement.Click()
@@ -223,6 +226,8 @@ sequenceDiagram
     MsaaHelper-->>BasePage: Success
     BasePage-->>Test: Success
 ```
+
+**Note:** MSAA interactions are performed using the native window handle obtained from FlaUI's Window object. FlaUI is used for window management, while MSAA (accessed through the handle) is used for UI element interactions.
 
 #### ScreenshotHelper
 - Screenshot capture with FlaUI
@@ -260,9 +265,18 @@ sequenceDiagram
 
 #### FlaUI (UIA3)
 - **UI Automation 3.0** - Latest version of Microsoft UI Automation
+- Used for launching applications and managing windows
+- Provides native window handles for MSAA access
 - Support for Win32, WPF, WinForms, UWP
 - Better performance than UIA2
 - Modern fluent API
+
+#### MSAA (Microsoft Active Accessibility)
+- **Accessibility API** - Native Windows accessibility interface
+- Accessed through FlaUI window handles (not directly)
+- Used for UI element interactions (clicks, text input, etc.)
+- Ideal for legacy controls and applications
+- Works with any Windows application that supports accessibility
 
 #### NUnit
 - Mature testing framework
@@ -303,8 +317,9 @@ sequenceDiagram
 - `AppLauncher.LaunchApp()` acts as factory for Window
 
 ### Wrapper Pattern
-- `BasePage` wraps MSAA interactions
+- `BasePage` wraps MSAA interactions (accessed through FlaUI window handles)
 - Provides simplified API for MSAA element operations
+- FlaUI is used to obtain window handles, MSAA uses those handles for UI interactions
 
 ## Complete Test Flow
 
@@ -333,9 +348,15 @@ sequenceDiagram
     
     SpecFlow->>Scenario: Execute scenario
     Scenario->>PageObject: Login(employee, password)
-    PageObject->>Framework: MsaaHelper.FindByNamePath()
+    PageObject->>FlaUI: Get NativeWindowHandle from Window
+    FlaUI-->>PageObject: IntPtr (window handle)
+    PageObject->>Framework: MsaaHelper.FindByNamePath(handle, path)
+    Framework->>MSAA: IAccessible navigation (using handle from FlaUI)
+    MSAA-->>Framework: Element found
     Framework-->>PageObject: MsaaElement
     PageObject->>Framework: MsaaElement.SetText()/Click()
+    Framework->>MSAA: accDoDefaultAction()/SetValue()
+    MSAA-->>Framework: Action executed
     
     Scenario->>Scenario: Assert.That(...)
     

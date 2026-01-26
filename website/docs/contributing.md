@@ -511,7 +511,8 @@ Valuable contribution ideas:
 ## Resources
 
 - [C# Coding Conventions](https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
-- [FlaUI Documentation](https://github.com/FlaUI/FlaUI)
+- [FlaUI Documentation](https://github.com/FlaUI/FlaUI) - For window management APIs
+- **Note:** Hipos uses FlaUI for launching applications and managing windows. MSAA (Microsoft Active Accessibility) is used for UI element interactions, accessed through window handles provided by FlaUI.
 - [NUnit Documentation](https://docs.nunit.org/)
 - [SpecFlow Documentation](https://docs.specflow.org/)
 - [ExtentReports Documentation](https://www.extentreports.com/)

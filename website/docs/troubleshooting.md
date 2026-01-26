@@ -130,10 +130,10 @@ WaitHelper.WaitUntilAdaptive(
 
 #### 3. Element in Popup/Modal
 
-✅ **Solution:** Wait for popup to appear first, then interact with MSAA
+✅ **Solution:** Wait for popup to appear first, then interact with MSAA (using handle from FlaUI)
 
 ```csharp
-// Wait for popup window using FlaUI
+// Wait for popup window using FlaUI (for window management)
 var automation = AppLauncher.Instance.Automation;
 var allWindows = automation.GetDesktop().FindAllChildren();
 var popup = allWindows.FirstOrDefault(w => w.Name == "Settings");
@@ -141,7 +141,8 @@ var popup = allWindows.FirstOrDefault(w => w.Name == "Settings");
 if (popup != null)
 {
     var popupHandle = popup.Properties.NativeWindowHandle.Value;
-    // Interact with elements in popup using MSAA
+    // Get native handle from FlaUI window, then interact with MSAA
+    var popupHandle = popup.Properties.NativeWindowHandle.Value;
     var okButton = MsaaHelper.FindByNamePath(popupHandle, "OkButton");
     okButton?.Click();
 }
@@ -324,7 +325,7 @@ Mouse.Click(new Point(100, 200));  // Absolute coordinates
 
 ✅ **Do this:**
 ```csharp
-ClickElement("Parent", "ButtonId");  // Click using MSAA name path
+ClickElement("Parent", "ButtonId");  // Click using MSAA (via FlaUI window handle)
 ```
 
 ✅ **Solution 2:** Configure fixed resolution in CI
@@ -347,16 +348,20 @@ If your app is DPI-aware, ensure tests are too:
 </application>
 ```
 
-## FlaUI Issues
+## FlaUI and MSAA Issues
 
-### UIA3 vs UIA2
+**Note:** The framework uses FlaUI (UIA3) for window management (launching applications, managing windows) and MSAA (Microsoft Active Accessibility) accessed through FlaUI window handles for UI element interactions. Most interaction issues are related to MSAA, while window management issues are related to FlaUI.
 
-**When to use UIA2 instead of UIA3?**
+### UIA3 vs UIA2 (Window Management)
+
+**When to use UIA2 instead of UIA3 for window management?**
 
 Use UIA2 if:
-- ❌ Legacy app (Win32, old WinForms)
-- ❌ UIA3 doesn't find elements
-- ❌ App uses custom/third-party controls
+- ❌ Legacy app (Win32, old WinForms) that FlaUI UIA3 cannot detect
+- ❌ UIA3 doesn't find the application window
+- ❌ App uses custom windowing that UIA3 doesn't support
+
+**Note:** Changing UIA3 to UIA2 only affects window management (launching and finding windows). MSAA interactions remain the same regardless of UIA version, as MSAA uses native window handles provided by FlaUI.
 
 ```csharp
 // Change in AppLauncher.cs
@@ -367,7 +372,7 @@ _automation = new UIA3Automation();
 _automation = new UIA2Automation();
 ```
 
-### Important Differences
+### Important Differences (Window Management Only)
 
 | Aspect | UIA3 | UIA2 |
 |---------|------|------|
@@ -602,7 +607,7 @@ UI Automation needs direct access to Windows session. RDP creates a separate ses
 
 ### Can I test 32-bit apps from 64-bit tests?
 
-**Answer:** YES, FlaUI handles both architectures.
+**Answer:** YES, FlaUI handles both architectures for window management. MSAA (accessed through FlaUI handles) also works with both 32-bit and 64-bit applications.
 
 Ensure build configuration is correct:
 ```xml
@@ -635,6 +640,8 @@ dotnet tool install -g FlaUI.Inspect
 flaui-inspect
 ```
 
+**Note:** FlaUI Inspect is useful for inspecting window structure and properties. For MSAA element inspection, you may also need tools like Inspect.exe (Windows SDK) or AccExplorer to view the MSAA accessibility tree.
+
 ### Spy++ (Visual Studio)
 - Analyze window hierarchy
 - View Windows messages
@@ -648,7 +655,9 @@ If your problem isn't listed:
 2. **Manual screenshot capture:** During debug, see what's happening
 3. **Use Inspect.exe:** Verify elements are accessible
 4. **Simplify:** Create minimal test that reproduces the problem
-5. **Search GitHub Issues:** [FlaUI Issues](https://github.com/FlaUI/FlaUI/issues)
+5. **Search GitHub Issues:** 
+   - [FlaUI Issues](https://github.com/FlaUI/FlaUI/issues) - For window management problems
+   - MSAA issues are typically related to element accessibility - verify elements support MSAA using Inspect.exe
 
 ## Next Steps
 

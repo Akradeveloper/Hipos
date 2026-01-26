@@ -7,7 +7,9 @@ namespace Hipos.Tests.PageObjects;
 
 /// <summary>
 /// Base class for all Page Objects.
-/// Provides common functionality for interacting with elements using MSAA.
+/// Provides common functionality for interacting with elements using MSAA (Microsoft Active Accessibility).
+/// MSAA is accessed through native window handles obtained from FlaUI Window objects.
+/// FlaUI is used for window management, while MSAA (via the handles) is used for UI element interactions.
 /// </summary>
 public abstract class BasePage
 {
