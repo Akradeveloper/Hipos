@@ -1,0 +1,92 @@
+# GitLab CI/CD Pipeline
+# Migrado desde GitHub Actions workflows
+#
+# CONFIGURACIÓN REQUERIDA:
+# 1. Para comentarios en MRs: Configurar variable GITLAB_TOKEN en Settings > CI/CD > Variables
+#    (Token con permisos api, read_user, read_repository)
+# 2. Para tests UI en Windows: Configurar runner Windows con tags [windows, ui-tests]
+#    y cambiar los tags en los jobs test-ui y smoke-tests
+# 3. Para GitLab Pages: Habilitar en Settings > Pages del proyecto
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  NODE_VERSION: "20"
+  DOTNET_VERSION: "8.0.x"
+
+# ============================================
+# JOBS DE DOCUMENTACIÓN
+# ============================================
+
+build-docs:
+  stage: build
+  image: node:${NODE_VERSION}
+  
+  # Ejecutar solo en push a main cuando cambian archivos relevantes
+  # o cuando se ejecuta manualmente
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
+      changes:
+        - website/**/*
+        - .gitlab-ci.yml
+    - if: $CI_PIPELINE_SOURCE == "web"
+  
+  cache:
+    key: 
+      files:
+        - website/package-lock.json
+    paths:
+      - website/node_modules/
+  
+  script:
+    - cd website
+    - npm ci
+    - npm run build
+    - cd ..
+    # Mover build a public/ para GitLab Pages
+    - mkdir -p public
+    - cp -r website/build/* public/
+  
+  artifacts:
+    paths:
+      - public/
+    expire_in: 1 hour
+    only:
+      - main
+  
+  tags:
+    - docker
+
+# Deploy a GitLab Pages
+# GitLab requiere que el job se llame 'pages' y los artifacts estén en 'public/'
+pages:
+  stage: deploy
+  image: alpine:latest
+  
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
+      changes:
+        - website/**/*
+        - .gitlab-ci.yml
+    - if: $CI_PIPELINE_SOURCE == "web"
+  
+  dependencies:
+    - build-docs
+  
+  script:
+    - echo "Desplegando a GitLab Pages..."
+    - echo "Los artifacts de build-docs se publicarán automáticamente"
+  
+  artifacts:
+    paths:
+      - public/
+  
+  tags:
+    - docker
+  
+  # Permitir solo un deploy concurrente (similar a concurrency en GitHub)
+  resource_group: pages
+
