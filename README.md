@@ -114,7 +114,7 @@ Hipos/
 └── README.md                      # Este archivo
 ```
 
-**Nota:** El framework usa MSAA (Microsoft Active Accessibility) para interacciones con elementos UI, con soporte para polling adaptativo y timeouts dinámicos.
+**Nota:** El framework usa FlaUI para lanzar aplicaciones y gestionar ventanas, y MSAA (Microsoft Active Accessibility) accediendo a través de los handles de ventana de FlaUI para interacciones con elementos UI. Incluye soporte para polling adaptativo y timeouts dinámicos.
 
 ## 🧪 Ejecutar Tests
 
@@ -420,8 +420,8 @@ mkdir actions-runner && cd actions-runner
 | **Lenguaje** | C# + .NET 8 | Framework base |
 | **Test Runner** | NUnit 4.0 | Ejecución de tests |
 | **BDD Framework** | SpecFlow 4.0 | Tests con sintaxis Gherkin |
-| **UI Automation** | FlaUI 4.0 (UIA3) | Lanzamiento de aplicaciones y gestión de ventanas |
-| **UI Interaction** | MSAA (Microsoft Active Accessibility) | Interacción con elementos UI |
+| **Gestión de Ventanas** | FlaUI 4.0 (UIA3) | Lanzamiento de aplicaciones y gestión de ventanas |
+| **Interacción UI** | MSAA (vía FlaUI) | Interacción con elementos UI usando handles de FlaUI |
 | **Reporting** | ExtentReports 5.0 | Reportes HTML profesionales |
 | **Logging** | Serilog 3.1 | Logs estructurados |
 | **Configuration** | Microsoft.Extensions.Configuration | Gestión de config |
@@ -446,7 +446,7 @@ mkdir actions-runner && cd actions-runner
 <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
 ```
 
-**Nota:** El framework usa MSAA (Microsoft Active Accessibility) nativo de Windows para interacciones con elementos UI, no requiere paquetes adicionales.
+**Nota:** El framework usa MSAA (Microsoft Active Accessibility) para interacciones con elementos UI, accediendo a través de los handles de ventana proporcionados por FlaUI. FlaUI se usa para lanzar aplicaciones y gestionar ventanas, mientras que MSAA (usando los handles de FlaUI) se usa para las interacciones con elementos UI.
 
 ## 📖 Ejemplos
 

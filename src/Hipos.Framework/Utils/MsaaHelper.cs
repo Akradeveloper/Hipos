@@ -6,6 +6,11 @@ using System.Runtime.InteropServices;
 
 namespace Hipos.Framework.Utils;
 
+/// <summary>
+/// Helper for Microsoft Active Accessibility (MSAA) interactions.
+/// MSAA is accessed through native window handles, typically obtained from FlaUI Window objects.
+/// FlaUI is used for window management, while MSAA (using these handles) is used for UI element interactions.
+/// </summary>
 public static class MsaaHelper
 {
     private const int ObjIdClient = unchecked((int)0xFFFFFFFC);

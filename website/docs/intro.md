@@ -13,10 +13,10 @@ Hipos is a complete UI automation framework for Windows applications (Win32, WPF
 ## Key Features
 
 ### 🎯 Robust Automation
-- **FlaUI with UIA3**: State-of-the-art UI automation technology
+- **FlaUI with UIA3**: Used for launching applications and managing windows
+- **MSAA via FlaUI**: Microsoft Active Accessibility interactions through FlaUI window handles for legacy controls
 - **Hybrid Search**: Intelligent system that detects both UWP and classic Win32 windows
 - **Smart Waits**: Explicit wait system with configurable retry
-- **MSAA Integration**: Accessibility-based interactions for legacy controls
 - **Error Handling**: Automatic screenshot capture and logs on test failures
 - **Complex Tests**: Real application interactions (clicks, inputs, validations)
 - **BDD Support**: SpecFlow integration for behavior-driven development
@@ -40,7 +40,7 @@ Hipos is a complete UI automation framework for Windows applications (Win32, WPF
 - **NUnit + SpecFlow**: Mature and widely adopted testing frameworks
 - **Complete Documentation**: Docusaurus portal with examples and guides
 - **Clean Code**: Well-organized helpers, wrappers and utilities
-- **MSAA Support**: Accessibility-based interactions for legacy controls
+- **MSAA via FlaUI**: Microsoft Active Accessibility interactions accessed through FlaUI window handles
 
 ## Technology Stack
 
@@ -61,7 +61,8 @@ graph LR
 | Language | C# | .NET 8 |
 | Test Runner | NUnit | 4.2+ |
 | BDD Framework | SpecFlow | 4.0+ |
-| UI Automation | FlaUI | 4.0+ |
+| Window Management | FlaUI (UIA3) | 4.0+ |
+| UI Interactions | MSAA (via FlaUI) | Native Windows |
 | HTML Reporting | ExtentReports | 5.0+ |
 | JSON Reporting | Cucumber JSON | - |
 | Test Management | Jira/Xray | - |
@@ -74,7 +75,7 @@ graph LR
 
 **Current Tests:**
 - SpecFlow scenarios for HIPOS login
-- MSAA-based interactions for critical login controls
+- MSAA-based interactions (via FlaUI) for critical login controls
 - UI validation after authentication
 
 **Execution Time:**
@@ -98,10 +99,10 @@ Hipos is ideal for:
 ## Why Hipos?
 
 ### vs. Coded UI (deprecated)
-Coded UI has been deprecated since Visual Studio 2019. Hipos uses FlaUI, an actively maintained and modern library.
+Coded UI has been deprecated since Visual Studio 2019. Hipos uses FlaUI for window management and MSAA (via FlaUI) for UI interactions, providing an actively maintained and modern solution.
 
 ### vs. WinAppDriver
-WinAppDriver requires the app to be instrumented and has limitations with custom controls. FlaUI/UIA3 works with any standard Windows application.
+WinAppDriver requires the app to be instrumented and has limitations with custom controls. Hipos uses FlaUI for launching applications and MSAA (accessed through FlaUI window handles) for interacting with any standard Windows application, including legacy controls.
 
 ### vs. Manual Scripting
 Hipos provides structure, patterns, helpers and all the infrastructure ready (reporting, logging, CI/CD, test management integration).

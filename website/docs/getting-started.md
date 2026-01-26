@@ -124,7 +124,7 @@ Hipos/
 ├── src/
 │   ├── Hipos.Framework/        # Framework core
 │   │   ├── Core/               # AppLauncher, ScreenshotHelper
-│   │   ├── Utils/              # WaitHelper, MsaaHelper
+│   │   ├── Utils/              # WaitHelper, MsaaHelper (MSAA via FlaUI handles)
 │   │   │                       # ExtentReportManager, CucumberJsonReportGenerator
 │   │   └── Config/             # ConfigManager
 │   └── Hipos.Tests/            # Tests and Page Objects
@@ -201,7 +201,7 @@ Configure the application to test in `src/Hipos.Tests/appsettings.json`:
 - `VideoRecording.FrameRate`: Frames per second (default: 10)
 - `VideoRecording.Quality`: Video quality: `"low"`, `"medium"`, or `"high"` (default: `"medium"`)
 
-**Note:** MSAA selectors are now defined as static constants in PageObjects, not in `appsettings.json`. See [Framework Guide](./framework-guide.md) for details.
+**Note:** MSAA selectors are now defined as static constants in PageObjects, not in `appsettings.json`. MSAA interactions use window handles obtained from FlaUI Window objects. See [Framework Guide](./framework-guide.md) for details.
 
 **Supported Applications:**
 - ✅ Classic Win32 (Notepad, Paint, legacy apps)
@@ -292,7 +292,8 @@ Now that you have the framework running:
 
 ### Screenshots not generated
 
-- Verify FlaUI can capture the window
+- Verify FlaUI can capture the window (for window management)
+- Verify MSAA can access elements (using handles from FlaUI)
 - Check write permissions in `reports/` directory
 - Verify `ScreenshotHelper.TakeScreenshot()` is being called
 

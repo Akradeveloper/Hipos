@@ -101,12 +101,24 @@ The application path is configured in `appsettings.json`:
 
 ## MSAA Helper
 
-`MsaaHelper` provides Microsoft Active Accessibility (MSAA) interactions for legacy controls or applications where UIA is not enough.
+`MsaaHelper` provides Microsoft Active Accessibility (MSAA) interactions for legacy controls or applications where UIA is not enough. **Important:** MSAA is accessed through FlaUI window handles - FlaUI is used to launch applications and obtain window handles, then MSAA is used for UI element interactions.
+
+### How It Works
+
+1. **FlaUI** launches the application and provides a `Window` object
+2. The **native window handle** is extracted from the FlaUI `Window` object
+3. **MSAA** uses this handle to interact with UI elements within that window
 
 ### Basic Usage
 
 ```csharp
+// FlaUI provides the window
+var mainWindow = AppLauncher.Instance.MainWindow;
+
+// Get native handle from FlaUI window
 var handle = mainWindow.Properties.NativeWindowHandle.Value;
+
+// Use MSAA with the handle obtained from FlaUI
 var employee = MsaaHelper.FindByName(handle, "employee");
 employee?.SetText("user123");
 
@@ -205,7 +217,7 @@ ClickElement("Parent", "Button");
 
 ## BasePage MSAA Methods
 
-`BasePage` provides MSAA-based methods for interacting with elements using name paths.
+`BasePage` provides MSAA-based methods for interacting with elements using name paths. The MSAA interactions are performed using the native window handle obtained from the FlaUI `Window` object passed to the PageObject constructor.
 
 ### Finding Elements
 
@@ -244,13 +256,13 @@ string[] path = ParseNamePath("Parent > Child > Button");
 
 ### BasePage
 
-Base class for all Page Objects. Uses MSAA for element interactions.
+Base class for all Page Objects. Uses MSAA (via FlaUI window handles) for element interactions.
 
 ```csharp
 public abstract class BasePage
 {
-    protected Window Window { get; }  // FlaUI Window for handle and focus
-    protected IntPtr WindowHandle { get; }  // Native handle for MSAA
+    protected Window Window { get; }  // FlaUI Window (used to obtain native handle)
+    protected IntPtr WindowHandle { get; }  // Native handle extracted from FlaUI Window (used for MSAA)
     protected int DefaultTimeout { get; }
     
     // MSAA methods
