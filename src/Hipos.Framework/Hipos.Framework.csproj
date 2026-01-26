@@ -18,4 +18,11 @@
     <PackageReference Include="SpecFlow" Version="4.0.7-beta" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Accessibility">
+      <HintPath>$(SystemRoot)\Microsoft.NET\Framework64\v4.0.30319\Accessibility.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
 </Project>

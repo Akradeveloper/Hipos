@@ -17,7 +17,7 @@ Detailed guide for using the Hipos framework components.
 var launcher = AppLauncher.Instance;
 
 // Launch application
-var mainWindow = launcher.LaunchApp("calc.exe", timeoutMs: 15000);
+var mainWindow = launcher.LaunchApp("C:\\hiposAut.exe", timeoutMs: 15000);
 
 // Get main window at any time
 var window = launcher.MainWindow;
@@ -36,7 +36,7 @@ launcher.CloseApp();
 
 ### Hybrid Window Search ⭐
 
-A key feature that supports modern UWP apps (Calculator) and classic Win32 apps (Notepad):
+A key feature that supports modern UWP apps and classic Win32 apps:
 
 #### Phase 1: Strict Mode (first 5 seconds)
 
@@ -56,8 +56,7 @@ if (windowProcessId != processId) {
 
 ```csharp
 // Search by window title if strict mode failed
-if (window.Title.Contains("Calculadora") || 
-    window.Title.Contains("Calculator")) {
+if (window.Title.Contains("HIPOS")) {
     // ✅ Found
 }
 ```
@@ -70,10 +69,10 @@ if (window.Title.Contains("Calculadora") ||
 #### Log Example
 
 ```
-[00:00.000] Launching application: calc.exe
+[00:00.000] Launching application: C:\hiposAut.exe
 [00:00.100] Process launched with PID: 38092
 [00:05.000] ⚠️ Switching to relaxed search mode (by window title)
-[00:05.500] ✓ Window found: 'Calculadora' (PID: 38124, Mode: Relaxed)
+[00:05.500] ✓ Window found: 'HIPOS' (PID: 38124, Mode: Relaxed)
 ```
 
 ### Configuration
@@ -82,7 +81,7 @@ The application path is configured in `appsettings.json`:
 
 ```json
 {
-  "AppPath": "calc.exe",           // System apps: name only
+  "AppPath": "C:\\hiposAut.exe",
   "DefaultTimeout": 15000          // 15s for UWP apps
 }
 ```
@@ -90,8 +89,8 @@ The application path is configured in `appsettings.json`:
 **AppPath examples:**
 
 ```json
-// Windows Calculator (UWP)
-"AppPath": "calc.exe"
+// HIPOS (recommended)
+"AppPath": "C:\\hiposAut.exe"
 
 // Notepad (Win32)
 "AppPath": "notepad.exe"
@@ -100,85 +99,41 @@ The application path is configured in `appsettings.json`:
 "AppPath": "C:\\MyApp\\bin\\Debug\\MyApp.exe"
 ```
 
-## BaseTest
+## MSAA Helper
 
-Base class for all your tests. Provides automatic hooks.
+`MsaaHelper` provides Microsoft Active Accessibility (MSAA) interactions for legacy controls or applications where UIA is not enough.
 
-### Usage
-
-```csharp
-public class MyTests : BaseTest
-{
-    [Test]
-    public void MyTest()
-    {
-        // MainWindow is already available
-        var page = new CalculatorPage(MainWindow!);
-        
-        // Your test logic here
-    }
-}
-```
-
-### Automatic Hooks
-
-#### `[OneTimeSetUp]` - Once per fixture
-1. Configures Serilog
-2. Initializes ConfigManager
-3. **Launches application ONCE**
-4. Provides `MainWindow` for all tests
-
-**Advantage:** App does NOT open/close between tests → **much faster tests**
-
-#### `[SetUp]` - Before each test
-1. Log test start
-2. Create Page Object instance if needed
-
-#### `[TearDown]` - After each test
-1. If test failed:
-   - Automatically capture screenshot
-   - Attach to ExtentReports report
-2. Log test completion
-
-#### `[OneTimeTearDown]` - Once at the end
-1. **Close application**
-2. Attach full logs
-3. Close Serilog
-
-### Migration from old SetUp/TearDown
+### Basic Usage
 
 ```csharp
-// ❌ Old (app opens/closes each test)
-[SetUp]
-public void SetUp() {
-    AppLauncher.Instance.LaunchApp(...);
-}
+var handle = mainWindow.Properties.NativeWindowHandle.Value;
+var employee = MsaaHelper.FindByName(handle, "employee");
+employee?.SetText("user123");
 
-[TearDown]
-public void TearDown() {
-    AppLauncher.Instance.CloseApp();
-}
-
-// ✅ New (app opens ONCE)
-// BaseTest already handles this automatically with OneTimeSetUp/TearDown
+var loginButton = MsaaHelper.FindByName(handle, "login");
+loginButton?.Click();
 ```
 
-### Protected Property
+### Name Paths
+
+You can search by name path to traverse nested containers:
 
 ```csharp
-protected Window? MainWindow { get; private set; }
+var element = MsaaHelper.FindByNamePath(handle, "LoginPanel", "employee");
 ```
 
-Use `MainWindow` in your tests to create Page Objects.
+**Note:** MSAA selectors are now defined as static constants in PageObjects (see Page Objects section below), not in `appsettings.json`.
 
 ## WaitHelper
 
 Utilities for explicit waits. ALWAYS use explicit waits, not `Thread.Sleep()`.
 
-### WaitUntil (Generic)
+### WaitUntil (Fixed Polling)
+
+Generic wait with fixed polling interval:
 
 ```csharp
-// Wait for custom condition
+// Wait for custom condition with fixed polling
 bool success = WaitHelper.WaitUntil(
     condition: () => someElement.IsVisible,
     timeoutMs: 5000,
@@ -192,240 +147,202 @@ if (!success)
 }
 ```
 
-### WaitForElement
+### WaitUntilAdaptive (Adaptive Polling) ⭐ Recommended
+
+Adaptive polling that starts fast and increases gradually if condition doesn't meet. Automatically records response times for adaptive timeouts.
 
 ```csharp
-// Wait for element to appear
-var element = WaitHelper.WaitForElement(
-    parent: MainWindow,
-    automationId: "SubmitButton",
-    timeoutMs: 5000
-);
-
-if (element == null)
-{
-    // Element not found
-}
-```
-
-### WaitForWindowTitle
-
-```csharp
-// Wait for window with specific title
-bool found = WaitHelper.WaitForWindowTitle(
-    title: "Settings",
-    timeoutMs: 3000
+// Wait with adaptive polling (recommended)
+bool success = WaitHelper.WaitUntilAdaptive(
+    condition: () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 5000,
+    conditionDescription: "button exists"
 );
 ```
 
-### WaitForElementEnabled
+**How it works:**
+- **First 2 seconds**: Fast polling (100ms) for quick conditions
+- **2-5 seconds**: Medium polling (300ms)
+- **After 5 seconds**: Slower polling (up to 1000ms) to save resources
 
-```csharp
-// Wait for element to be enabled
-bool enabled = WaitHelper.WaitForElementEnabled(
-    element: button,
-    timeoutMs: 5000
-);
-```
-
-### WaitForElementClickable
-
-```csharp
-// Wait for element to be clickable (enabled + visible)
-bool clickable = WaitHelper.WaitForElementClickable(
-    element: button,
-    timeoutMs: 5000
-);
-```
+**Benefits:**
+- ✅ Faster detection of quick conditions
+- ✅ More efficient than fixed polling
+- ✅ Automatically records response times for adaptive timeouts
 
 ### Best Practices
 
 ✅ **DO:**
 
 ```csharp
-// Explicit wait
-WaitHelper.WaitForElement(window, "ButtonId", 5000);
-button.Click();
+// Use adaptive polling (recommended)
+WaitHelper.WaitUntilAdaptive(
+    () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 5000,
+    conditionDescription: "button exists");
+ClickElement("Parent", "Button");
+```
+
+✅ **Also valid (fixed polling):**
+
+```csharp
+// Explicit wait with fixed polling interval
+WaitHelper.WaitUntil(
+    () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 5000,
+    pollingIntervalMs: 500,
+    conditionDescription: "button exists");
+ClickElement("Parent", "Button");
 ```
 
 ❌ **DON'T:**
 
 ```csharp
-// Hardcoded sleep
+// Hardcoded sleep - NEVER use this
 Thread.Sleep(2000);
-button.Click();
+ClickElement("Parent", "Button");
 ```
 
-## ElementWrapper
+## BasePage MSAA Methods
 
-Wrapper over `AutomationElement` that adds implicit waits and logging.
+`BasePage` provides MSAA-based methods for interacting with elements using name paths.
 
-### Create Wrapper
+### Finding Elements
 
 ```csharp
-var element = WaitHelper.WaitForElement(window, "InputTextBox", 5000);
-var wrapper = new ElementWrapper(element, defaultTimeout: 5000);
+// Find element by name path
+var element = FindElementByPath("Parent", "Child", "Button");
+
+// Check if element exists
+bool exists = ElementExistsByPath("Parent", "Button");
 ```
 
-### Methods
-
-#### Click()
+### Interacting with Elements
 
 ```csharp
-wrapper.Click();
-// Automatic wait until clickable
-// Automatic action logging
+// Click on element
+ClickElement("Parent", "Child", "Button");
+
+// Set text on element
+SetElementText("Hello World", "Parent", "TextBox");
+
+// Wait for element to disappear
+bool disappeared = WaitForElementToDisappear(
+    new[] { "Parent", "LoadingIndicator" }, 
+    timeoutMs: 5000);
 ```
 
-#### SetText()
+### Parsing Name Paths
 
 ```csharp
-wrapper.SetText("Hello World");
-// Clears existing text (Ctrl+A, Delete)
-// Sets new text
-// Automatic logging
-```
-
-#### GetText()
-
-```csharp
-string text = wrapper.GetText();
-// Attempts multiple ways to get text:
-// 1. Text Pattern
-// 2. Value Pattern
-// 3. Name property
-```
-
-#### IsEnabled()
-
-```csharp
-bool enabled = wrapper.IsEnabled();
-```
-
-#### IsVisible()
-
-```csharp
-bool visible = wrapper.IsVisible();
-// Verifies it's not offscreen
-```
-
-#### WaitUntilExists()
-
-```csharp
-bool exists = wrapper.WaitUntilExists(timeoutMs: 3000);
-```
-
-### Access to Original Element
-
-```csharp
-AutomationElement original = wrapper.Element;
-// For advanced cases where you need FlaUI's full API
+// Parse configuration path string
+string[] path = ParseNamePath("Parent > Child > Button");
+// Returns: ["Parent", "Child", "Button"]
 ```
 
 ## Page Objects
 
 ### BasePage
 
-Base class for all Page Objects.
+Base class for all Page Objects. Uses MSAA for element interactions.
 
 ```csharp
 public abstract class BasePage
 {
-    protected Window Window { get; }
+    protected Window Window { get; }  // FlaUI Window for handle and focus
+    protected IntPtr WindowHandle { get; }  // Native handle for MSAA
     protected int DefaultTimeout { get; }
     
-    protected ElementWrapper FindElement(string automationId)
+    // MSAA methods
+    protected MsaaHelper.MsaaElement FindElementByPath(params string[] namePath)
     {
-        // Searches for element with automatic wait
+        // Finds MSAA element by name path
         // Throws exception if not found
     }
     
-    protected bool ElementExists(string automationId)
+    protected bool ElementExistsByPath(params string[] namePath)
     {
-        // Verifies existence without throwing exception
+        // Verifies MSAA element existence without throwing exception
     }
     
-    protected bool WaitForElementVisible(string automationId, int? timeoutMs = null)
+    protected void ClickElement(params string[] namePath)
     {
-        // Waits until element is visible
+        // Clicks on MSAA element by name path
+    }
+    
+    protected void SetElementText(string text, params string[] namePath)
+    {
+        // Sets text on MSAA element by name path
+    }
+    
+    protected bool WaitForElementToDisappear(string[] namePath, int? timeoutMs = null)
+    {
+        // Waits until MSAA element disappears
+        // Uses adaptive timeouts if enabled in configuration
+        // Uses WaitUntilAdaptive for efficient polling
+    }
+    
+    protected static string[] ParseNamePath(string rawPath)
+    {
+        // Parses configuration path string into array
+    }
+    
+    protected void EnsureWindowInForeground()
+    {
+        // Brings window to foreground using FlaUI
+        // Uses WaitUntilAdaptive instead of Thread.Sleep
     }
 }
 ```
 
-### Create Your Page Object
+### Create Your Page Object (MSAA)
+
+MSAA selectors are now defined as static constants in PageObjects for better encapsulation and type safety:
 
 ```csharp
-public class LoginPage : BasePage
+public class HiposLoginPage : BasePage
 {
-    // AutomationIds (constants for easy maintenance)
-    private const string UsernameTextBoxId = "UsernameTextBox";
-    private const string PasswordTextBoxId = "PasswordTextBox";
-    private const string LoginButtonId = "LoginButton";
-    private const string ErrorMessageId = "ErrorMessage";
-    
-    public LoginPage(Window window) : base(window)
+    // MSAA selectors as static constants
+    private static readonly string[] EmployeePath = { "employee" };
+    private static readonly string[] PasswordPath = { "password" };
+    private static readonly string[] LoginButtonPath = { "login" };
+    private static readonly string[] DataCtrlPath = { "datactrl" };
+
+    public HiposLoginPage(Window window) : base(window)
     {
-        Log.Information("Navigating to LoginPage");
-        ExtentReportManager.LogInfo("Navigating to LoginPage");
+    }
+
+    public void Login(string employee, string password)
+    {
+        EnsureWindowInForeground();
+        SetElementText(employee, EmployeePath);
+        SetElementText(password, PasswordPath);
+        ClickElement(LoginButtonPath);
     }
     
-    // Atomic actions
-    public void EnterUsername(string username)
+    public bool WaitForDataCtrlToDisappear()
     {
-        Log.Information("Entering username: {Username}", username);
-        ExtentReportManager.LogInfo($"Entering username: {username}");
-        var textBox = FindElement(UsernameTextBoxId);
-        textBox.SetText(username);
-    }
-    
-    public void EnterPassword(string password)
-    {
-        Log.Information("Entering password");
-        ExtentReportManager.LogInfo("Entering password");
-        var textBox = FindElement(PasswordTextBoxId);
-        textBox.SetText(password);
-    }
-    
-    public void ClickLogin()
-    {
-        Log.Information("Clicking Login");
-        ExtentReportManager.LogInfo("Clicking Login");
-        var button = FindElement(LoginButtonId);
-        button.Click();
-    }
-    
-    // Composed actions (fluent)
-    public void Login(string username, string password)
-    {
-        Log.Information("Login with user: {Username}", username);
-        ExtentReportManager.LogInfo($"Login with user: {username}");
-        EnterUsername(username);
-        EnterPassword(password);
-        ClickLogin();
-    }
-    
-    // Verifications
-    public string GetErrorMessage()
-    {
-        var label = FindElement(ErrorMessageId);
-        return label.GetText();
-    }
-    
-    public bool IsLoginButtonEnabled()
-    {
-        var button = FindElement(LoginButtonId);
-        return button.IsEnabled();
+        // Uses adaptive timeouts if enabled
+        return WaitForElementToDisappear(DataCtrlPath);
     }
 }
 ```
+
+**Benefits of static constants:**
+- ✅ Better encapsulation (selectors live with the PageObject)
+- ✅ Type safety (compile-time checking)
+- ✅ No configuration file needed for selectors
+- ✅ Easier to maintain and refactor
 
 ### Conventions
 
-1. **AutomationIds as constants**: Easy to find and change
+1. **Selectors as static constants**: Define MSAA selectors as static readonly arrays in PageObjects
 2. **Public methods only**: Don't expose elements directly
 3. **Naming**: Verbs for actions (`Click`, `Enter`, `Select`)
 4. **ExtentReports Logging**: Document important actions
 5. **Return values**: Only for verifications, not elements
+6. **MSAA for interactions**: Use BasePage MSAA methods for all element interactions
+7. **Adaptive waits**: Use `WaitUntilAdaptive()` for better performance
 
 ## ConfigManager
 
@@ -439,8 +356,13 @@ var config = ConfigManager.Instance;
 // Predefined properties
 string appPath = config.AppPath;
 int timeout = config.DefaultTimeout;
-int retries = config.RetryCount;
-string logLevel = config.LogLevel;
+
+// Adaptive timeout properties
+bool adaptiveEnabled = config.AdaptiveTimeoutsEnabled;
+int initialTimeout = config.InitialTimeout;
+int minTimeout = config.MinTimeout;
+int maxTimeout = config.MaxTimeout;
+int responseTimeWindow = config.ResponseTimeWindow;
 
 // Custom values
 string customValue = config.GetValue("MyCustomKey", "defaultValue");
@@ -455,7 +377,13 @@ IConfigurationSection section = config.GetSection("MySection");
 {
   "AppPath": "path/to/app.exe",
   "DefaultTimeout": 5000,
-  "RetryCount": 3,
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000,
+    "ResponseTimeWindow": 10
+  },
   "Serilog": {
     "MinimumLevel": "Information"
   },
@@ -469,6 +397,13 @@ IConfigurationSection section = config.GetSection("MySection");
   }
 }
 ```
+
+**Timeouts Configuration:**
+- `Adaptive`: Enable/disable adaptive timeouts (default: false)
+- `InitialTimeout`: Initial timeout in milliseconds (default: 5000)
+- `MinTimeout`: Minimum timeout allowed (default: 2000)
+- `MaxTimeout`: Maximum timeout allowed (default: 30000)
+- `ResponseTimeWindow`: Number of response times to track (default: 10)
 
 ### Environment Variables
 
@@ -485,6 +420,64 @@ $env:AppPath = "C:\other\app.exe"
 env:
   AppPath: "C:\ci\app.exe"
 ```
+
+## AdaptiveTimeoutManager
+
+`AdaptiveTimeoutManager` automatically adjusts timeouts based on measured application response times. This makes tests faster when the app is fast, and more robust when the app is slow.
+
+### How It Works
+
+1. **Records Response Times**: Automatically records how long conditions take to fulfill
+2. **Calculates Adaptive Timeouts**: Uses percentile 95 of recent response times × safety factor
+3. **Adjusts Automatically**: Timeouts adapt to app speed without manual configuration
+
+### Usage
+
+The framework uses `AdaptiveTimeoutManager` automatically when enabled in configuration:
+
+```json
+{
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000,
+    "ResponseTimeWindow": 10
+  }
+}
+```
+
+When enabled:
+- `WaitUntilAdaptive()` automatically records response times
+- `BasePage.WaitForElementToDisappear()` uses adaptive timeouts
+- Timeouts adjust based on actual app performance
+
+### Manual Usage
+
+```csharp
+var timeoutManager = AdaptiveTimeoutManager.Instance;
+
+// Get adaptive timeout based on measured response times
+int adaptiveTimeout = timeoutManager.GetAdaptiveTimeout(baseTimeout: 5000);
+
+// Get statistics
+var stats = timeoutManager.GetStats();
+if (stats != null)
+{
+    Console.WriteLine($"Average: {stats.Average}ms");
+    Console.WriteLine($"P95: {stats.Percentile95}ms");
+}
+
+// Reset history
+timeoutManager.Reset();
+```
+
+### Benefits
+
+- ✅ **Faster tests**: If app is fast, timeouts are shorter
+- ✅ **More robust**: If app is slow, timeouts adjust automatically
+- ✅ **No configuration needed**: Works automatically once enabled
+- ✅ **Self-learning**: Adapts to app performance over time
 
 ## ScreenshotHelper
 
@@ -512,58 +505,7 @@ if (path != null && File.Exists(path))
 
 ### Used Automatically
 
-`BaseTest` automatically captures screenshots when a test fails, you don't need to call it manually.
-
-## RetryPolicy
-
-Retry policy for transient operations.
-
-### Usage
-
-```csharp
-// Action without return
-RetryPolicy.Execute(
-    action: () => button.Click(),
-    maxRetries: 3,
-    delayMs: 1000
-);
-
-// Function with return
-var result = RetryPolicy.Execute(
-    func: () => element.GetText(),
-    maxRetries: 3,
-    delayMs: 1000
-);
-```
-
-### Transient Errors (retryable)
-
-- `ElementNotAvailableException`
-- `TimeoutException`
-- `InvalidOperationException` with specific messages
-
-### Non-Transient Errors (NOT retryable)
-
-- **AssertionException**: Assert failures never retry
-- Other non-transient errors
-
-### Example
-
-```csharp
-// This will retry if element is temporarily unavailable
-RetryPolicy.Execute(() =>
-{
-    var element = FindElement("DynamicButton");
-    element.Click();
-}, maxRetries: 3);
-
-// This will NOT retry (assert failure)
-RetryPolicy.Execute(() =>
-{
-    var text = GetResult();
-    Assert.That(text, Is.EqualTo("Expected")); // If it fails, throws immediately
-});
-```
+`TestHooks` captures screenshots when a scenario fails, you don't need to call it manually.
 
 ## Naming Conventions
 
@@ -572,7 +514,7 @@ RetryPolicy.Execute(() =>
 - Descriptive: `SubmitButton`, `UsernameTextBox`, `ErrorMessage`
 
 ### Page Objects
-- Suffix `Page`: `LoginPage`, `CalculatorPage`
+- Suffix `Page`: `HiposLoginPage`
 - PascalCase
 
 ### Tests
@@ -584,67 +526,31 @@ RetryPolicy.Execute(() =>
 - Action verbs: `Click`, `Enter`, `Select`, `Get`, `Is`, `Wait`
 - PascalCase
 
-## Complete Example
+## Complete Example (SpecFlow)
 
 ```csharp
-[TestFixture]
-[Category("Smoke")]
-[Description("Tests for login functionality")]
-public class LoginTests : BaseTest
+[Binding]
+public class HiposLoginStepDefinitions : BaseStepDefinitions
 {
-    private LoginPage _loginPage = null!;
-    
-    [SetUp]
-    public void TestSetUp()
+    private HiposLoginPage? _loginPage;
+
+    [Given("the HIPOS login page is open")]
+    public void GivenTheHiposLoginPageIsOpen()
     {
-        // BaseTest.SetUp already launched the app
-        _loginPage = new LoginPage(MainWindow!);
-        ExtentReportManager.LogInfo($"Starting test: {TestContext.CurrentContext.Test.Name}");
+        Assert.That(MainWindow, Is.Not.Null, "HIPOS window should be available");
+        _loginPage = new HiposLoginPage(MainWindow!);
     }
-    
-    [Test]
-    [Category("Positive")]
-    [Description("Verifies successful login with valid credentials")]
-    public void VerifyLogin_WithValidCredentials_Success()
+
+    [When("I login with employee \"(.*)\" and password \"(.*)\"")]
+    public void WhenILoginWithEmployeeAndPassword(string employee, string password)
     {
-        // Arrange
-        var username = "testuser";
-        var password = "testpass";
-        
-        // Act
-        ExtentReportManager.LogInfo("Attempting to login");
-        _loginPage.Login(username, password);
-        
-        // Wait for dashboard
-        WaitHelper.WaitForWindowTitle("Dashboard", 5000);
-        
-        // Assert
-        Assert.That(MainWindow.Title, Does.Contain("Dashboard"));
-        ExtentReportManager.LogPass("Login successful - Dashboard displayed");
+        _loginPage!.Login(employee, password);
     }
-    
-    [Test]
-    [Category("Negative")]
-    [Description("Verifies error message with invalid credentials")]
-    public void VerifyLogin_WithInvalidCredentials_ShowsError()
+
+    [Then("the datactrl element should not exist")]
+    public void ThenTheDataCtrlElementShouldNotExist()
     {
-        // Arrange
-        var username = "invalid";
-        var password = "wrong";
-        
-        // Act
-        ExtentReportManager.LogInfo("Attempting to login with invalid credentials");
-        _loginPage.Login(username, password);
-        
-        // Wait for error
-        Thread.Sleep(500); // Or better: WaitForElementVisible("ErrorMessage")
-        
-        var errorMessage = _loginPage.GetErrorMessage();
-        ExtentReportManager.LogInfo($"Error message displayed: {errorMessage}");
-        
-        // Assert
-        Assert.That(errorMessage, Does.Contain("Invalid credentials"));
-        ExtentReportManager.LogPass("Error message verified successfully");
+        Assert.That(_loginPage!.WaitForDataCtrlToDisappear(), Is.True);
     }
 }
 ```
@@ -710,7 +616,11 @@ public class MyStepDefinitions : BaseStepDefinitions
     {
         LogInfo("Clicking button");
         _page!.ClickButton();
-        Thread.Sleep(500);
+        // Wait for result using adaptive polling
+        WaitHelper.WaitUntilAdaptive(
+            () => _page!.IsResultReady(),
+            timeoutMs: 5000,
+            conditionDescription: "result ready");
     }
 
     [Then("the result should be \"(.*)\"")]

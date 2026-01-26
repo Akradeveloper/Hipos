@@ -9,8 +9,11 @@ Framework enterprise de automatización para aplicaciones Windows (Win32, WPF, W
 
 ## 🎯 Características
 
-- **🚀 Fácil de Usar**: Page Objects, waits inteligentes, helpers robustos
+- **🚀 Fácil de Usar**: Page Objects, waits inteligentes con polling adaptativo, helpers robustos
+- **⚡ Rendimiento Optimizado**: Polling adaptativo y timeouts dinámicos que se ajustan automáticamente
+- **🔧 MSAA Integration**: Soporte para Microsoft Active Accessibility para aplicaciones legacy
 - **📊 Reporting Completo**: ExtentReports 5 con screenshots automáticos y logs detallados
+- **🧪 BDD Support**: SpecFlow para tests con sintaxis Gherkin
 - **⚙️ CI/CD Ready**: Workflows para GitHub Actions, guía para Azure DevOps
 - **🧪 Testing Robusto**: Retry policies, manejo de errores, categorización (smoke/regression)
 - **📚 Documentación Completa**: Portal Docusaurus con guías, ejemplos y troubleshooting
@@ -83,20 +86,22 @@ Passed!  - Failed:     0, Passed:     3, Skipped:     0
 Hipos/
 ├── src/
 │   ├── Hipos.Framework/           # Core del framework
-│   │   ├── Core/                  # AppLauncher (búsqueda híbrida), BaseTest, ScreenshotHelper
-│   │   ├── Utils/                 # WaitHelper, ElementWrapper, RetryPolicy
+│   │   ├── Core/                  # AppLauncher, ScreenshotHelper
+│   │   ├── Utils/                 # WaitHelper, MsaaHelper, AdaptiveTimeoutManager, ExtentReportManager, CucumberJsonReportGenerator
 │   │   └── Config/                # ConfigManager
 │   └── Hipos.Tests/               # Tests y Page Objects
-│       ├── PageObjects/           # CalculatorPage, BasePage
-│       ├── Tests/                 # CalculatorTests (11 tests)
-│       └── appsettings.json       # Configuración (calc.exe)
+│       ├── PageObjects/           # HiposLoginPage, BasePage (MSAA)
+│       ├── StepDefinitions/       # SpecFlow step definitions
+│       ├── Features/              # Gherkin feature files
+│       ├── Hooks/                 # TestHooks (SpecFlow lifecycle)
+│       └── appsettings.json       # Configuración con timeouts adaptativos
 ├── website/                       # Documentación Docusaurus
 │   ├── docs/                      # 9 páginas de documentación
 │   │   ├── intro.md               # Introducción
 │   │   ├── getting-started.md     # Quick start
 │   │   ├── architecture.md        # Diagramas y arquitectura
 │   │   ├── framework-guide.md     # Guía del framework
-│   │   ├── examples.md            # Ejemplos de tests ⭐ NUEVO
+│   │   ├── examples.md            # Ejemplos de tests
 │   │   ├── reporting-logging.md   # Reportes y logs
 │   │   ├── ci-cd.md               # CI/CD
 │   │   ├── troubleshooting.md     # Troubleshooting
@@ -109,7 +114,7 @@ Hipos/
 └── README.md                      # Este archivo
 ```
 
-**Nota:** El proyecto `Hipos.DemoApp` fue eliminado. Los tests ahora funcionan contra aplicaciones reales de Windows.
+**Nota:** El framework usa MSAA (Microsoft Active Accessibility) para interacciones con elementos UI, con soporte para polling adaptativo y timeouts dinámicos.
 
 ## 🧪 Ejecutar Tests
 
@@ -414,7 +419,9 @@ mkdir actions-runner && cd actions-runner
 |------------|-----------|-----------|
 | **Lenguaje** | C# + .NET 8 | Framework base |
 | **Test Runner** | NUnit 4.0 | Ejecución de tests |
-| **UI Automation** | FlaUI 4.0 (UIA3) | Interacción con aplicaciones Windows |
+| **BDD Framework** | SpecFlow 4.0 | Tests con sintaxis Gherkin |
+| **UI Automation** | FlaUI 4.0 (UIA3) | Lanzamiento de aplicaciones y gestión de ventanas |
+| **UI Interaction** | MSAA (Microsoft Active Accessibility) | Interacción con elementos UI |
 | **Reporting** | ExtentReports 5.0 | Reportes HTML profesionales |
 | **Logging** | Serilog 3.1 | Logs estructurados |
 | **Configuration** | Microsoft.Extensions.Configuration | Gestión de config |
@@ -428,58 +435,82 @@ mkdir actions-runner && cd actions-runner
 <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
 <PackageReference Include="Serilog" Version="3.1.1" />
 <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
 
 <!-- Tests -->
 <PackageReference Include="NUnit" Version="4.2.2" />
+<PackageReference Include="SpecFlow" Version="4.0.7-beta" />
 <PackageReference Include="ExtentReports" Version="5.0.4" />
 <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
 ```
 
+**Nota:** El framework usa MSAA (Microsoft Active Accessibility) nativo de Windows para interacciones con elementos UI, no requiere paquetes adicionales.
+
 ## 📖 Ejemplos
 
-### Test Simple
+### Test con SpecFlow (BDD)
+
+```gherkin
+Feature: HIPOS login
+  Scenario: Successful login hides datactrl
+    Given the HIPOS login page is open
+    When I login with employee "-1" and password "000000"
+    Then the datactrl element should not exist
+```
 
 ```csharp
-[Test]
-[Category("Smoke")]
-[Description("Verifica que la calculadora realiza una suma correctamente")]
-public void VerifyCalculatorAddition()
+[Binding]
+public class HiposLoginStepDefinitions : BaseStepDefinitions
 {
-    // Arrange
-    var calcPage = new CalculatorPage(MainWindow!);
-    ExtentReportManager.LogInfo("Realizando suma: 5 + 3");
-    
-    // Act
-    var result = calcPage.PerformOperation(5, "+", 3);
-    
-    // Assert
-    Assert.That(result, Does.Contain("8"));
-    ExtentReportManager.LogPass("Suma correcta: 5 + 3 = 8");
+    private HiposLoginPage? _loginPage;
+
+    [Given("the HIPOS login page is open")]
+    public void GivenTheHiposLoginPageIsOpen()
+    {
+        Assert.That(MainWindow, Is.Not.Null, "HIPOS window should be available");
+        _loginPage = new HiposLoginPage(MainWindow!);
+    }
+
+    [When("I login with employee \"(.*)\" and password \"(.*)\"")]
+    public void WhenILoginWithEmployeeAndPassword(string employee, string password)
+    {
+        _loginPage!.Login(employee, password);
+    }
+
+    [Then("the datactrl element should not exist")]
+    public void ThenTheDataCtrlElementShouldNotExist()
+    {
+        Assert.That(_loginPage!.WaitForDataCtrlToDisappear(), Is.True);
+    }
 }
 ```
 
-### Page Object
+### Page Object (MSAA)
 
 ```csharp
-public class CalculatorPage : BasePage
+public class HiposLoginPage : BasePage
 {
-    private const string Num1Id = "Num1";
-    private const string CalculateButtonId = "CalculateButton";
+    // MSAA selectors as static constants
+    private static readonly string[] EmployeePath = { "employee" };
+    private static readonly string[] PasswordPath = { "password" };
+    private static readonly string[] LoginButtonPath = { "login" };
     
-    public CalculatorPage(Window window) : base(window) { }
+    public HiposLoginPage(Window window) : base(window) { }
     
-    public void EnterNumbers(double num1, double num2)
+    public void Login(string employee, string password)
     {
-        FindElement(Num1Id).SetText(num1.ToString());
-        FindElement("Num2").SetText(num2.ToString());
+        EnsureWindowInForeground();
+        SetElementText(employee, EmployeePath);
+        SetElementText(password, PasswordPath);
+        ClickElement(LoginButtonPath);
     }
     
-    public string PerformCalculation(double num1, double num2, string op)
+    public bool WaitForDataCtrlToDisappear()
     {
-        EnterNumbers(num1, num2);
-        SelectOperation(op);
-        FindElement(CalculateButtonId).Click();
-        return GetCalculationResult();
+        // Uses adaptive timeouts if enabled
+        return WaitForElementToDisappear(DataCtrlPath);
     }
 }
 ```
@@ -488,9 +519,19 @@ public class CalculatorPage : BasePage
 
 ```json
 {
-  "AppPath": "../../../Hipos.DemoApp/bin/Debug/net8.0-windows/Hipos.DemoApp.exe",
-  "DefaultTimeout": 5000,
-  "RetryCount": 3,
+  "AppPath": "C:\\hiposAut.exe",
+  "DefaultTimeout": 15000,
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000,
+    "ResponseTimeWindow": 10
+  },
+  "Reporting": {
+    "CucumberJsonPath": "reports/cucumber.json",
+    "IncludeScreenshots": true
+  },
   "Serilog": {
     "MinimumLevel": "Information",
     "WriteTo": [{
@@ -500,6 +541,8 @@ public class CalculatorPage : BasePage
   }
 }
 ```
+
+**Nota:** Los selectores MSAA se definen como constantes estáticas en los PageObjects, no en `appsettings.json`.
 
 ## ✅ Mejoras Futuras
 
@@ -524,7 +567,7 @@ Checklist de funcionalidades que serían valiosas:
 - [ ] Docker support (experimental con Windows containers)
 
 ### Testing
-- [ ] BDD con SpecFlow (opcional)
+- [x] BDD con SpecFlow ✅ (implementado)
 - [ ] Accessibility testing con Axe
 - [ ] Performance benchmarks
 - [ ] Visual regression testing

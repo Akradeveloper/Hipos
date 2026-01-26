@@ -1,5 +1,3 @@
-using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Definitions;
 using Serilog;
 
 namespace Hipos.Framework.Utils;
@@ -10,9 +8,11 @@ namespace Hipos.Framework.Utils;
 public static class WaitHelper
 {
     private const int DefaultPollingIntervalMs = 500;
+    private const int MinPollingIntervalMs = 100;
+    private const int MaxPollingIntervalMs = 1000;
 
     /// <summary>
-    /// Espera hasta que una condición sea verdadera.
+    /// Espera hasta que una condición sea verdadera con polling fijo.
     /// </summary>
     /// <param name="condition">Función que retorna true cuando la condición se cumple</param>
     /// <param name="timeoutMs">Timeout en milisegundos</param>
@@ -57,107 +57,86 @@ public static class WaitHelper
     }
 
     /// <summary>
-    /// Espera hasta que un elemento esté disponible por su AutomationId.
+    /// Espera hasta que una condición sea verdadera con polling adaptativo.
+    /// El polling empieza rápido y aumenta gradualmente si la condición no se cumple.
+    /// Registra tiempos de respuesta para timeouts adaptativos.
     /// </summary>
-    /// <param name="parent">Elemento padre donde buscar</param>
-    /// <param name="automationId">AutomationId del elemento a buscar</param>
+    /// <param name="condition">Función que retorna true cuando la condición se cumple</param>
     /// <param name="timeoutMs">Timeout en milisegundos</param>
-    /// <returns>El elemento encontrado, o null si timeout</returns>
-    public static AutomationElement? WaitForElement(
-        AutomationElement parent, 
-        string automationId, 
-        int timeoutMs)
+    /// <param name="conditionDescription">Descripción de la condición para logging</param>
+    /// <param name="recordResponseTime">Si true, registra el tiempo de respuesta para timeouts adaptativos</param>
+    /// <returns>True si la condición se cumplió, false si timeout</returns>
+    public static bool WaitUntilAdaptive(
+        Func<bool> condition,
+        int timeoutMs,
+        string conditionDescription = "condición",
+        bool recordResponseTime = true)
     {
-        Log.Debug("Esperando elemento con AutomationId: {AutomationId}", automationId);
+        Log.Debug("Esperando {Description} con polling adaptativo (timeout: {Timeout}ms)", conditionDescription, timeoutMs);
 
-        AutomationElement? foundElement = null;
+        var startTime = DateTime.Now;
+        var attempts = 0;
+        var currentPollingInterval = MinPollingIntervalMs;
+        var elapsedMs = 0.0;
 
-        var found = WaitUntil(
-            () =>
-            {
-                try
-                {
-                    foundElement = parent.FindFirstDescendant(cf => 
-                        cf.ByAutomationId(automationId));
-                    return foundElement != null;
-                }
-                catch
-                {
-                    return false;
-                }
-            },
-            timeoutMs,
-            conditionDescription: $"elemento '{automationId}'");
-
-        if (found && foundElement != null)
+        while (elapsedMs < timeoutMs)
         {
-            Log.Information("Elemento encontrado: {AutomationId}", automationId);
-            return foundElement;
+            attempts++;
+            
+            try
+            {
+                if (condition())
+                {
+                    elapsedMs = (DateTime.Now - startTime).TotalMilliseconds;
+                    
+                    // Registrar tiempo de respuesta para timeouts adaptativos
+                    if (recordResponseTime && elapsedMs > 0)
+                    {
+                        try
+                        {
+                            AdaptiveTimeoutManager.Instance.RecordResponseTime(elapsedMs);
+                        }
+                        catch
+                        {
+                            // Ignorar errores al registrar tiempo (no crítico)
+                        }
+                    }
+                    
+                    Log.Debug("{Description} cumplida después de {Attempts} intentos ({Elapsed}ms)", 
+                        conditionDescription, attempts, (int)elapsedMs);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error verificando condición en intento {Attempts}", attempts);
+            }
+
+            Thread.Sleep(currentPollingInterval);
+
+            // Calcular tiempo transcurrido
+            elapsedMs = (DateTime.Now - startTime).TotalMilliseconds;
+
+            // Ajustar polling adaptativamente (backoff exponencial)
+            if (elapsedMs < 2000)
+            {
+                // Primeros 2 segundos: polling rápido
+                currentPollingInterval = MinPollingIntervalMs;
+            }
+            else if (elapsedMs < 5000)
+            {
+                // Entre 2-5 segundos: polling medio
+                currentPollingInterval = 300;
+            }
+            else
+            {
+                // Después de 5 segundos: polling más lento
+                currentPollingInterval = Math.Min(MaxPollingIntervalMs, currentPollingInterval + 100);
+            }
         }
 
-        Log.Warning("Elemento no encontrado: {AutomationId}", automationId);
-        return null;
-    }
-
-    /// <summary>
-    /// Espera hasta que aparezca una ventana con el título especificado.
-    /// </summary>
-    /// <param name="title">Título de la ventana (puede ser parcial)</param>
-    /// <param name="timeoutMs">Timeout en milisegundos</param>
-    /// <returns>True si la ventana apareció, false si timeout</returns>
-    public static bool WaitForWindowTitle(string title, int timeoutMs)
-    {
-        Log.Debug("Esperando ventana con título: {Title}", title);
-
-        var found = WaitUntil(
-            () =>
-            {
-                try
-                {
-                    var mainWindow = Core.AppLauncher.Instance.MainWindow;
-                    return mainWindow != null && 
-                           mainWindow.Title.Contains(title, StringComparison.OrdinalIgnoreCase);
-                }
-                catch
-                {
-                    return false;
-                }
-            },
-            timeoutMs,
-            conditionDescription: $"ventana '{title}'");
-
-        return found;
-    }
-
-    /// <summary>
-    /// Espera hasta que un elemento esté habilitado.
-    /// </summary>
-    /// <param name="element">Elemento a verificar</param>
-    /// <param name="timeoutMs">Timeout en milisegundos</param>
-    /// <returns>True si el elemento se habilitó, false si timeout</returns>
-    public static bool WaitForElementEnabled(AutomationElement element, int timeoutMs)
-    {
-        Log.Debug("Esperando que elemento esté habilitado: {Name}", element.Name);
-
-        return WaitUntil(
-            () => element.IsEnabled,
-            timeoutMs,
-            conditionDescription: $"elemento '{element.Name}' habilitado");
-    }
-
-    /// <summary>
-    /// Espera hasta que un elemento sea clickeable.
-    /// </summary>
-    /// <param name="element">Elemento a verificar</param>
-    /// <param name="timeoutMs">Timeout en milisegundos</param>
-    /// <returns>True si el elemento es clickeable, false si timeout</returns>
-    public static bool WaitForElementClickable(AutomationElement element, int timeoutMs)
-    {
-        Log.Debug("Esperando que elemento sea clickeable: {Name}", element.Name);
-
-        return WaitUntil(
-            () => element.IsEnabled && element.IsOffscreen == false,
-            timeoutMs,
-            conditionDescription: $"elemento '{element.Name}' clickeable");
+        Log.Warning("{Description} no se cumplió después de {Timeout}ms ({Attempts} intentos)", 
+            conditionDescription, timeoutMs, attempts);
+        return false;
     }
 }

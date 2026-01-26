@@ -58,7 +58,7 @@ Sirve el build localmente para verificar antes de deploy.
 4. **framework-guide.md** - Guía detallada del framework
    - AppLauncher (búsqueda híbrida ⭐)
    - BaseTest (OneTimeSetUp/TearDown)
-   - WaitHelper, ElementWrapper
+   - WaitHelper, BasePage (MSAA)
    - Page Objects
    - ConfigManager
 

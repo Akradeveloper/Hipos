@@ -17,13 +17,13 @@ System.TimeoutException: Could not get main window after 15000ms (PID: 38092)
 
 **Cause:** The framework cannot find the application window.
 
-#### For UWP Apps (Calculator, Windows Store Apps)
+#### For UWP Apps (Windows Store Apps)
 
 ✅ **Solution 1:** Increase timeout to 15-20 seconds
 
 ```json
 {
-  "AppPath": "calc.exe",
+  "AppPath": "YourUwpApp.exe",
   "DefaultTimeout": 20000  // 20 seconds
 }
 ```
@@ -33,7 +33,7 @@ System.TimeoutException: Could not get main window after 15000ms (PID: 38092)
 ```
 # Search in logs/test-*.log
 [00:05.000] ⚠️ Switching to relaxed search mode (by window title)
-[00:05.500] ✓ Window found: 'Calculadora' (PID: 38124, Mode: Relaxed)
+[00:05.500] ✓ Window found: 'MyUwpApp' (PID: 38124, Mode: Relaxed)
 ```
 
 If you see `Mode: Relaxed`, it means the window is in a **child process** (normal for UWP).
@@ -107,34 +107,44 @@ C:\Program Files (x86)\Windows Kits\10\bin\<version>\x64\inspect.exe
 
 #### 2. Element Not Ready
 
-✅ **Solution:** Increase timeout or add specific wait
+✅ **Solution:** Increase timeout or add specific wait with adaptive polling
 
 ```csharp
-// Increase timeout
-var element = WaitHelper.WaitForElement(window, "ButtonId", timeoutMs: 10000);
+// Wait for element to exist with MSAA (recommended: adaptive polling)
+WaitHelper.WaitUntilAdaptive(
+    () => ElementExistsByPath("Parent", "Button"),
+    timeoutMs: 10000,
+    conditionDescription: "button exists");
 
-// Or wait for specific condition
-WaitHelper.WaitUntil(
-    () => element != null && element.IsEnabled,
+// Or wait for specific condition with adaptive polling
+WaitHelper.WaitUntilAdaptive(
+    () => {
+        var element = FindElementByPath("Parent", "Button");
+        return element != null;
+    },
     timeoutMs: 5000,
-    conditionDescription: "button enabled"
-);
+    conditionDescription: "button available");
 ```
+
+**Note:** `WaitUntilAdaptive()` uses adaptive polling (starts fast, increases gradually) and automatically records response times for adaptive timeouts. This is more efficient than fixed polling.
 
 #### 3. Element in Popup/Modal
 
-✅ **Solution:** Wait for popup to appear first
+✅ **Solution:** Wait for popup to appear first, then interact with MSAA
 
 ```csharp
-// Wait for popup
-WaitHelper.WaitForWindowTitle("Settings", 5000);
-
-// Search in all windows
+// Wait for popup window using FlaUI
+var automation = AppLauncher.Instance.Automation;
 var allWindows = automation.GetDesktop().FindAllChildren();
 var popup = allWindows.FirstOrDefault(w => w.Name == "Settings");
 
-// Search element in popup
-var element = WaitHelper.WaitForElement(popup, "OkButton", 5000);
+if (popup != null)
+{
+    var popupHandle = popup.Properties.NativeWindowHandle.Value;
+    // Interact with elements in popup using MSAA
+    var okButton = MsaaHelper.FindByNamePath(popupHandle, "OkButton");
+    okButton?.Click();
+}
 ```
 
 #### 4. Application Uses Non-Standard UI Framework
@@ -163,8 +173,11 @@ var result = GetResult();
 
 ✅ **Solution:**
 ```csharp
-button.Click();
-WaitHelper.WaitForElement(window, "ResultLabel", 5000);
+ClickElement("Parent", "Button");
+WaitHelper.WaitUntilAdaptive(
+    () => ElementExistsByPath("Parent", "ResultLabel"),
+    timeoutMs: 5000,
+    conditionDescription: "result label appears");
 var result = GetResult();
 ```
 
@@ -179,12 +192,13 @@ ClickLogin();  // Click before text is fully entered
 
 ✅ **Solution:**
 ```csharp
-EnterText("user");
-Thread.Sleep(100);  // Small delay to process
-EnterPassword("pass");
-Thread.Sleep(100);
-WaitHelper.WaitForElementEnabled(loginButton, 5000);
-ClickLogin();
+SetElementText("user", "Parent", "Username");
+SetElementText("pass", "Parent", "Password");
+WaitHelper.WaitUntilAdaptive(
+    () => ElementExistsByPath("Parent", "LoginButton"),
+    timeoutMs: 5000,
+    conditionDescription: "login button available");
+ClickElement("Parent", "LoginButton");
 ```
 
 #### 3. Residual State from Previous Test
@@ -193,10 +207,10 @@ ClickLogin();
 
 ✅ **Solution:**
 ```csharp
-[SetUp]
-public void TestSetUp()
+[BeforeScenario]
+public void BeforeScenario()
 {
-    // BaseTest.SetUp already launched clean app
+    // TestHooks already launched a clean app session
     // Navigate to known initial state
     ResetToDefaultState();
 }
@@ -204,19 +218,20 @@ public void TestSetUp()
 
 #### 4. Animation Timing
 
-✅ **Solution:** Wait for animation to finish
+✅ **Solution:** Wait for animation to finish using adaptive polling
 
 ```csharp
-// Wait for element to be visible AND settled
-WaitHelper.WaitUntil(
-    () => element.IsVisible && element.BoundingRectangle.IsEmpty == false,
-    5000,
-    conditionDescription: "element visible and rendered"
-);
-
-// Additional small delay for animations
-Thread.Sleep(300);
+// Wait for element to be visible AND settled using adaptive polling
+WaitHelper.WaitUntilAdaptive(
+    () => {
+        var element = FindElementByPath("Parent", "AnimatedElement");
+        return element != null && ElementExistsByPath("Parent", "AnimatedElement");
+    },
+    timeoutMs: 5000,
+    conditionDescription: "element visible and rendered");
 ```
+
+**Note:** The framework no longer uses `Thread.Sleep()`. All waits use explicit conditions with adaptive polling for better performance and reliability.
 
 ## Permission Issues
 
@@ -309,8 +324,7 @@ Mouse.Click(new Point(100, 200));  // Absolute coordinates
 
 ✅ **Do this:**
 ```csharp
-var button = FindElement("ButtonId");
-button.Click();  // Click relative to element
+ClickElement("Parent", "ButtonId");  // Click using MSAA name path
 ```
 
 ✅ **Solution 2:** Configure fixed resolution in CI
@@ -388,9 +402,26 @@ Thread.Sleep(5000);  // Always waits 5 seconds
 
 ✅ **Solution:**
 ```csharp
-WaitHelper.WaitForElement(window, "ButtonId", 5000);
-// Returns immediately when element is found
+WaitHelper.WaitUntilAdaptive(
+    () => ElementExistsByPath("Parent", "ButtonId"),
+    timeoutMs: 5000,
+    conditionDescription: "button found");
+// Returns immediately when element is found (uses adaptive polling)
 ```
+
+**Additional optimization:** Enable adaptive timeouts in `appsettings.json`:
+```json
+{
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000
+  }
+}
+```
+
+This automatically adjusts timeouts based on actual app performance, making tests faster when the app is fast and more robust when it's slow.
 
 #### 3. App Launches Slowly
 
@@ -436,7 +467,7 @@ ls src/Hipos.Tests/bin/Debug/net8.0-windows/reports/
 ```
 
 If empty:
-- Verify ExtentReports is initialized in `TestHooks` or `BaseTest`
+- Verify ExtentReports is initialized in `TestHooks`
 - Verify tests ran completely
 - Check for exceptions during `AfterTestRun`/`OneTimeTearDown`
 
@@ -444,7 +475,7 @@ If empty:
 
 Check that `ExtentReportManager.Flush()` is called in:
 - `TestHooks.AfterTestRun` (for SpecFlow)
-- `BaseTest.OneTimeTearDown` (for NUnit)
+- `TestHooks.AfterTestRun`
 
 ### Screenshots Not Appearing in Report
 
@@ -458,7 +489,7 @@ ls src/Hipos.Tests/bin/Debug/net8.0-windows/reports/screenshots/
 If empty:
 - Test didn't fail (screenshots only on failures)
 - Verify write permissions
-- Verify `TestHooks.AfterScenario` or `BaseTest.TearDown` executes
+- Verify `TestHooks.AfterScenario` executes
 
 ### Cucumber JSON Not Generated
 
@@ -540,9 +571,11 @@ echo $AppPath
 
 **Answer:** 99% of the time it's due to **insufficient or incorrect waits**.
 
-- ❌ Don't use hardcoded `Thread.Sleep()`
-- ✅ Use `WaitHelper.WaitForElement()` and variants
+- ❌ Don't use hardcoded `Thread.Sleep()` (the framework no longer uses it)
+- ✅ Use `WaitHelper.WaitUntilAdaptive()` with MSAA conditions (recommended)
+- ✅ Use `WaitHelper.WaitUntil()` with fixed polling if needed
 - ✅ Wait for specific conditions, not arbitrary times
+- ✅ Enable adaptive timeouts for automatic timeout adjustment
 
 ### Can I run tests in parallel?
 

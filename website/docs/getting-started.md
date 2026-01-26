@@ -65,23 +65,7 @@ Build succeeded.
 
 ## Your First Test
 
-### 1. Run Basic Tests (Demo)
-
-Demo tests verify that Calculator opens and is functional:
-
-```bash
-dotnet test --filter "Category=Demo"
-```
-
-### 2. Run Complex Tests
-
-Tests that perform real mathematical operations:
-
-```bash
-dotnet test --filter "Category=Complex"
-```
-
-### 3. Run All Tests
+### 1. Run All Tests
 
 ```bash
 dotnet test
@@ -94,7 +78,7 @@ You should see something like:
 ⏱️  Duration: ~90s
 ```
 
-### 4. View the Reports
+### 2. View the Reports
 
 Reports are generated automatically in multiple formats:
 
@@ -128,6 +112,7 @@ The report includes:
 - ✅ Status of each test (passed/failed)
 - 📊 Charts and statistics
 - 📸 Screenshots of failures
+- 🎥 Videos of test execution (if video recording is enabled)
 - 📄 Detailed logs
 - 🏷️ Tags and categories
 - 🌙 Dark theme
@@ -138,22 +123,22 @@ The report includes:
 Hipos/
 ├── src/
 │   ├── Hipos.Framework/        # Framework core
-│   │   ├── Core/               # AppLauncher, BaseTest, ScreenshotHelper
-│   │   ├── Utils/              # WaitHelper, ElementWrapper, RetryPolicy
+│   │   ├── Core/               # AppLauncher, ScreenshotHelper
+│   │   ├── Utils/              # WaitHelper, MsaaHelper
 │   │   │                       # ExtentReportManager, CucumberJsonReportGenerator
 │   │   └── Config/             # ConfigManager
 │   └── Hipos.Tests/            # Tests and Page Objects
-│       ├── PageObjects/        # CalculatorPage, BasePage
+│       ├── PageObjects/        # HiposLoginPage, BasePage
 │       ├── StepDefinitions/    # SpecFlow step definitions
 │       ├── Features/           # Gherkin feature files
-│       ├── Tests/              # NUnit tests (11 tests)
+│       ├── Tests/              # NUnit tests (si aplica)
 │       ├── Hooks/              # SpecFlow hooks (TestHooks.cs)
 │       └── appsettings.json    # Configuration
 ├── website/                    # Docusaurus documentation
 └── .github/workflows/          # CI/CD (ui-tests.yml, docs.yml)
 ```
 
-**Note:** Tests work against **Windows Calculator** (`calc.exe`).
+**Note:** Tests run against the configured HIPOS executable.
 
 ## Configuration
 
@@ -163,12 +148,25 @@ Configure the application to test in `src/Hipos.Tests/appsettings.json`:
 
 ```json
 {
-  "AppPath": "calc.exe",
+  "AppPath": "C:\\hiposAut.exe",
   "DefaultTimeout": 15000,
-  "RetryCount": 3,
+  "Timeouts": {
+    "Adaptive": true,
+    "InitialTimeout": 5000,
+    "MinTimeout": 2000,
+    "MaxTimeout": 30000,
+    "ResponseTimeWindow": 10
+  },
   "Reporting": {
     "CucumberJsonPath": "reports/cucumber.json",
     "IncludeScreenshots": true
+  },
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "Always",
+    "VideoDirectory": "reports/videos",
+    "FrameRate": 10,
+    "Quality": "medium"
   },
   "Serilog": {
     "MinimumLevel": "Information",
@@ -187,17 +185,27 @@ Configure the application to test in `src/Hipos.Tests/appsettings.json`:
 
 **Important Parameters:**
 - `AppPath`: Path to executable (absolute, relative, or in PATH)
-  - `calc.exe` - Windows Calculator
-  - `notepad.exe` - Notepad
-  - `C:\MyApp\App.exe` - Your custom application
+  - `C:\\hiposAut.exe` - HIPOS executable
+  - `C:\\MyApp\\App.exe` - Your custom application
 - `DefaultTimeout`: Timeout in milliseconds (15s recommended for UWP apps)
-- `RetryCount`: Number of retries for transient errors
+- `Timeouts.Adaptive`: Enable adaptive timeouts (automatically adjusts based on app speed)
+- `Timeouts.InitialTimeout`: Initial timeout for adaptive system (default: 5000ms)
+- `Timeouts.MinTimeout`: Minimum timeout allowed (default: 2000ms)
+- `Timeouts.MaxTimeout`: Maximum timeout allowed (default: 30000ms)
+- `Timeouts.ResponseTimeWindow`: Number of response times to track (default: 10)
 - `Reporting.CucumberJsonPath`: Path for Jira/Xray compatible JSON
 - `Reporting.IncludeScreenshots`: Include screenshots in JSON (base64)
+- `VideoRecording.Enabled`: Enable video recording (requires FFmpeg)
+- `VideoRecording.Mode`: When to record: `"Always"`, `"OnFailure"`, `"OnSuccess"`, or `"Disabled"`
+- `VideoRecording.VideoDirectory`: Directory to save videos (default: `"reports/videos"`)
+- `VideoRecording.FrameRate`: Frames per second (default: 10)
+- `VideoRecording.Quality`: Video quality: `"low"`, `"medium"`, or `"high"` (default: `"medium"`)
+
+**Note:** MSAA selectors are now defined as static constants in PageObjects, not in `appsettings.json`. See [Framework Guide](./framework-guide.md) for details.
 
 **Supported Applications:**
 - ✅ Classic Win32 (Notepad, Paint, legacy apps)
-- ✅ Modern UWP (Calculator, Windows Store apps)
+- ✅ Modern UWP (Windows Store apps)
 - ✅ WPF/WinForms (your custom applications)
 
 ### Environment Variables
@@ -260,9 +268,9 @@ Now that you have the framework running:
 
 ### Error: "Executable not found"
 
-**For system apps** (calc, notepad): Use only the executable name:
+**For system apps** (notepad, etc.): Use only the executable name:
 ```json
-"AppPath": "calc.exe"  // ✅ Correct
+"AppPath": "notepad.exe"  // ✅ Correct
 ```
 
 **For custom apps**: Use absolute or relative path:
@@ -272,7 +280,7 @@ Now that you have the framework running:
 
 ### Tests hang or timeout
 
-**UWP Apps (Calculator, etc.):**
+**UWP Apps:**
 - Increase `DefaultTimeout` to 15000 or more
 - Framework uses hybrid search (first 5s strict, then relaxed)
 - Check logs in `logs/test-*.log` to see which search mode was used

@@ -12,7 +12,7 @@ Thank you for your interest in contributing to Hipos! This document explains how
 
 Found a bug? Open an issue on GitHub with:
 
-1. **Descriptive title**: "ElementWrapper.SetText fails with ComboBox"
+1. **Descriptive title**: "BasePage.SetElementText fails with ComboBox"
 2. **Detailed description**:
    - What you expected to happen
    - What actually happened
@@ -24,8 +24,7 @@ Found a bug? Open an issue on GitHub with:
 4. **Sample code**:
 
 ```csharp
-var element = FindElement("ComboBoxId");
-element.SetText("value");  // Throws exception here
+SetElementText("value", "Parent", "ComboBoxId");  // Throws exception here
 ```
 
 5. **Logs/Screenshots**: If possible
@@ -217,29 +216,29 @@ Log.Information("Element {Name} has state {State}", element.Name, element.State)
 ### Test Conventions
 
 ```csharp
-[TestFixture]
-[Category("Smoke")]
-[Description("Tests for feature X")]
-public class FeatureTests : BaseTest
+[Binding]
+public class FeatureStepDefinitions : BaseStepDefinitions
 {
-    // Test name: Descriptive and specific
-    [Test]
-    [Category("Smoke")]
-    [Description("Detailed description of what the test verifies")]
-    public void VerifyFeature_WithCondition_ExpectedResult()
+    private FeaturePage? _page;
+
+    [Given("the feature page is open")]
+    public void GivenTheFeaturePageIsOpen()
     {
-        // Arrange: Prepare data and state
-        var page = new FeaturePage(MainWindow!);
-        var testData = "test value";
-        
-        // Act: Execute action
-        page.DoSomething(testData);
-        
-        // Assert: Verify result
-        Assert.That(page.GetResult(), Is.EqualTo("expected"));
-        
-        // Log to ExtentReports
-        ExtentReportManager.LogPass("Feature verified successfully");
+        Assert.That(MainWindow, Is.Not.Null);
+        _page = new FeaturePage(MainWindow!);
+    }
+
+    [When("I execute the feature with \"(.*)\"")]
+    public void WhenIExecuteTheFeature(string input)
+    {
+        _page!.DoSomething(input);
+    }
+
+    [Then("the result should be \"(.*)\"")]
+    public void ThenTheResultShouldBe(string expected)
+    {
+        Assert.That(_page!.GetResult(), Is.EqualTo(expected));
+        LogPass("Feature verified successfully");
     }
 }
 ```
@@ -261,15 +260,14 @@ public class MyPage : BasePage
     public void DoAction()
     {
         Log.Information("Executing action");
-        var element = FindElement(ElementId);
-        element.Click();
+        ClickElement("Parent", ElementId);
     }
     
     // Getters: return values, not elements
     public string GetResult()
     {
-        var element = FindElement(ElementId);
-        return element.GetText();
+        var element = FindElementByPath("Parent", ElementId);
+        return element.GetName() ?? string.Empty;
     }
     
     // Don't expose AutomationElements directly
@@ -292,7 +290,7 @@ public class MyPage : BasePage
 - Write comments in Spanish
 - Use Spanish variable names or method names
 
-**Exception**: UI element names in tests may be in Spanish/English for compatibility with localized Windows applications (e.g., "Calculadora" or "Calculator").
+**Exception**: UI element names in tests may be in Spanish/English for compatibility with localized Windows applications (e.g., "Aceptar" or "Accept").
 
 ## Add New Features
 
@@ -322,17 +320,13 @@ public static class DragDropHelper
 
 **2. Add tests:**
 
-```csharp
-// In Hipos.Tests/Tests/
-[TestFixture]
-public class DragDropHelperTests : BaseTest
-{
-    [Test]
-    public void VerifyDragDrop_BetweenElements_Success()
-    {
-        // Test here
-    }
-}
+```gherkin
+# In Hipos.Tests/Features/DragDrop.feature
+Feature: Drag and drop
+  Scenario: Drag element A to element B
+    Given the drag-drop page is open
+    When I drag element A to element B
+    Then the drop should be successful
 ```
 
 **3. Update documentation:**
@@ -362,22 +356,21 @@ public class NewPage : BasePage
 
 ### New Test Suite
 
-**1. Create in `src/Hipos.Tests/Tests/`:**
+**1. Create in `src/Hipos.Tests/Features/`:**
 
-```csharp
-[TestFixture]
-[Category("NewCategory")]
-[Description("Tests for new feature")]
-public class NewFeatureTests : BaseTest
-{
-    // Tests here
-}
+```gherkin
+Feature: New feature
+  @NewCategory
+  Scenario: Happy path
+    Given the new feature page is open
+    When I execute the new feature
+    Then I should see the expected result
 ```
 
 **2. Run and verify:**
 
 ```bash
-dotnet test --filter "Category=NewCategory"
+dotnet test --filter "TestCategory=NewCategory"
 ```
 
 ## Update Documentation

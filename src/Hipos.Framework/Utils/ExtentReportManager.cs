@@ -186,6 +186,61 @@ public class ExtentReportManager
     }
 
     /// <summary>
+    /// Adjunta un video al test actual.
+    /// Nota: ExtentReports 5.0 no tiene soporte nativo para videos, así que se agrega como enlace HTML.
+    /// </summary>
+    public static void AttachVideo(string videoPath)
+    {
+        lock (_lock)
+        {
+            if (_currentTest != null && File.Exists(videoPath))
+            {
+                try
+                {
+                    var fileName = Path.GetFileName(videoPath);
+                    var fullPath = Path.GetFullPath(videoPath);
+                    
+                    // ExtentReports 5.0 no tiene AddMediaFromPath para videos
+                    // Agregamos el video como enlace HTML en el reporte
+                    var relativePath = GetRelativePath(fullPath, ExtentReportManager.ReportPath);
+                    var videoLink = $"<a href='{relativePath}' target='_blank' style='color: #4CAF50; text-decoration: none;'>🎥 {fileName}</a>";
+                    
+                    _currentTest.Info($"Video de ejecución: {videoLink}");
+                    Log.Information("Video adjuntado como enlace: {FileName} ({Path})", fileName, fullPath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "No se pudo adjuntar video: {Path}", videoPath);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Obtiene la ruta relativa de un archivo respecto a otro.
+    /// </summary>
+    private static string GetRelativePath(string filePath, string? basePath)
+    {
+        if (string.IsNullOrEmpty(basePath))
+        {
+            return filePath;
+        }
+
+        try
+        {
+            var baseUri = new Uri(Path.GetDirectoryName(basePath) + Path.DirectorySeparatorChar);
+            var fileUri = new Uri(filePath);
+            var relativeUri = baseUri.MakeRelativeUri(fileUri);
+            return Uri.UnescapeDataString(relativeUri.ToString().Replace('/', Path.DirectorySeparatorChar));
+        }
+        catch
+        {
+            // Si falla, devolver la ruta absoluta
+            return filePath;
+        }
+    }
+
+    /// <summary>
     /// Marca el test actual como omitido.
     /// </summary>
     public static void LogSkip(string message)

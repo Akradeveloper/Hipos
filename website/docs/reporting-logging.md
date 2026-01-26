@@ -37,6 +37,7 @@ The ExtentReports report includes:
 - 📈 **Categories**: Filtering by tags (Smoke, Complex, Demo)
 - ⏱️ **Timeline**: Execution time per test
 - 📸 **Screenshots**: Automatic capture on failures
+- 🎥 **Videos**: Test execution recordings (if video recording is enabled)
 - 📄 **Logs**: Step-by-step test execution logs
 - 🌙 **Dark Theme**: Better readability
 - 💻 **System Info**: Framework, environment, automation tool details
@@ -108,36 +109,125 @@ ExtentReportManager.LogSkip("Test skipped due to...");
 4. Screenshot is attached to ExtentReports
 5. Available in report under the failed test
 
-### Test Categories
+### Video Recording
 
-Use NUnit categories to organize tests:
+Hipos supports optional video recording of test execution, providing visual evidence of both successful and failed tests.
 
-```csharp
-[TestFixture]
-[Category("Demo")]
-public class CalculatorTests : BaseTest
+#### Configuration
+
+Configure video recording in `appsettings.json`:
+
+```json
 {
-    [Test]
-    [Category("Smoke")]
-    [Description("Verifies calculator opens correctly")]
-    public void VerifyCalculatorOpens()
-    {
-        // test code
-    }
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "Always",
+    "VideoDirectory": "reports/videos",
+    "FrameRate": 10,
+    "Quality": "medium"
+  }
 }
 ```
+
+**Configuration Options:**
+
+- `Enabled`: Enable/disable video recording (default: `false`)
+- `Mode`: When to record videos:
+  - `"Always"`: Record all tests (successful and failed)
+  - `"OnFailure"`: Only record when tests fail
+  - `"OnSuccess"`: Only record when tests pass
+  - `"Disabled"`: Disable video recording
+- `VideoDirectory`: Directory to save videos (default: `"reports/videos"`)
+- `FrameRate`: Frames per second (default: `10`, recommended: 5-15)
+- `Quality`: Video quality preset:
+  - `"low"`: Smaller file size, lower quality (faster encoding)
+  - `"medium"`: Balanced quality and file size (recommended)
+  - `"high"`: Best quality, larger file size (slower encoding)
+
+#### Requirements
+
+Video recording requires **FFmpeg** to be installed and available in the system PATH, or placed in the project directory.
+
+**Installing FFmpeg:**
+
+1. Download from [ffmpeg.org](https://ffmpeg.org/download.html)
+2. Extract and add to PATH, or place `ffmpeg.exe` in:
+   - Project root directory
+   - `tools/ffmpeg.exe`
+   - `bin/ffmpeg.exe`
+   - `ffmpeg/ffmpeg.exe`
+
+**Verifying FFmpeg:**
+
+```bash
+ffmpeg -version
+```
+
+If FFmpeg is not found, video recording will be automatically disabled and a warning will be logged.
+
+#### How It Works
+
+1. **BeforeScenario**: If recording is enabled and mode requires it, `VideoRecorder.StartRecording()` begins capturing the screen
+2. **During Test**: Video is recorded in the background
+3. **AfterScenario**: 
+   - Recording stops
+   - Based on mode and test result, video is either saved or deleted
+   - Saved videos are automatically attached to ExtentReports
+
+#### Video Files
+
+Videos are saved with descriptive names:
+
+```
+reports/videos/Successful_login_hides_datactrl_20240115_143022.mp4
+```
+
+#### Performance Considerations
+
+- **Frame Rate**: Lower frame rates (5-10 fps) reduce file size and CPU usage
+- **Quality**: Use `"low"` for faster tests, `"medium"` for balance, `"high"` for detailed analysis
+- **Disk Space**: Videos consume more space than screenshots. Consider cleanup policies for CI/CD
+
+#### Example Usage
+
+```csharp
+// Video recording is automatic based on configuration
+// No code changes needed in your tests!
+
+// Configuration example for CI/CD (only record failures):
+{
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "OnFailure",
+    "FrameRate": 8,
+    "Quality": "low"
+  }
+}
+
+// Configuration for local development (record all):
+{
+  "VideoRecording": {
+    "Enabled": true,
+    "Mode": "Always",
+    "FrameRate": 10,
+    "Quality": "medium"
+  }
+}
+```
+
+### Test Categories
 
 SpecFlow tags are automatically converted to categories:
 
 ```gherkin
-@Calculator @Demo
-Feature: Windows Calculator
+@Hipos @Login
+Feature: HIPOS login
 
   @Smoke
-  Scenario: Verify calculator opens
-    Given the calculator is open
-    When I verify the window title
-    Then the title should contain "Calculator"
+  Scenario: Successful login hides datactrl
+    Given the HIPOS login page is open
+    When I login with employee "-1" and password "000000"
+    Then the datactrl element should not exist
 ```
 
 ## Cucumber JSON for Jira/Xray
@@ -181,25 +271,25 @@ The cucumber.json file contains:
 ```json
 [
   {
-    "id": "windows-calculator",
-    "name": "Windows Calculator",
+    "id": "hipos-login",
+    "name": "HIPOS login",
     "description": "As a user...",
     "keyword": "Feature",
-    "uri": "Features/Calculator.feature",
+    "uri": "Features/Login.feature",
     "tags": [
-      {"name": "@Calculator"},
-      {"name": "@Demo"}
+      {"name": "@Hipos"},
+      {"name": "@Login"}
     ],
     "elements": [
       {
-        "id": "windows-calculator;perform-addition",
-        "name": "Perform a simple addition",
+        "id": "hipos-login;successful-login",
+        "name": "Successful login hides datactrl",
         "keyword": "Scenario",
         "type": "scenario",
-        "tags": [{"name": "@Complex"}],
+        "tags": [{"name": "@Smoke"}],
         "steps": [
           {
-            "name": "the calculator is open",
+            "name": "the HIPOS login page is open",
             "keyword": "Given ",
             "result": {
               "status": "passed",
@@ -266,14 +356,14 @@ Example for GitHub Actions:
 Use tags in your SpecFlow features to link with Xray test cases:
 
 ```gherkin
-@CALC-123 @regression
-Feature: Calculator Operations
+@HIPOS-123 @regression
+Feature: HIPOS login
   
-  @CALC-124 @smoke
-  Scenario: Simple addition
-    Given the calculator is open
-    When I perform the operation "2 + 3"
-    Then the result should be "5"
+  @HIPOS-124 @smoke
+  Scenario: Successful login hides datactrl
+    Given the HIPOS login page is open
+    When I login with employee "-1" and password "000000"
+    Then the datactrl element should not exist
 ```
 
 Tags like `@CALC-123` and `@CALC-124` will be imported to Xray and automatically link to corresponding Test Cases.
@@ -328,12 +418,12 @@ In `appsettings.json`:
 ```csharp
 using Serilog;
 
-public class CalculatorPage : BasePage
+public class HiposLoginPage : BasePage
 {
-    public void ClickNumber(int number)
+    public void Login(string employee, string password)
     {
-        Log.Information("Clicking on number: {Number}", number);
-        Log.Debug("Looking for element with ID: {AutomationId}", $"num{number}Button");
+        Log.Information("Login con employee: {Employee}", employee);
+        Log.Debug("Buscando elementos MSAA para login");
         
         try
         {
