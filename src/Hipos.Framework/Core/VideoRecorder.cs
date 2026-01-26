@@ -63,23 +63,28 @@ public static class VideoRecorder
                 var fileName = $"{sanitizedTestName}_{timestamp}.mp4";
                 _currentVideoPath = Path.Combine(videoDirectory, fileName);
 
-                // Buscar FFmpeg en PATH o ubicaciones comunes
+                // Buscar FFmpeg (prioriza tools/ffmpeg/ffmpeg.exe del proyecto)
                 var ffmpegPath = FindFfmpeg();
                 if (string.IsNullOrEmpty(ffmpegPath))
                 {
                     Log.Warning("FFmpeg no encontrado. La grabación de video no está disponible.");
-                    Log.Information("Para habilitar grabación de video, instala FFmpeg y agrégalo al PATH, o coloca ffmpeg.exe en el directorio del proyecto.");
+                    Log.Information("Para habilitar grabación de video, coloca ffmpeg.exe en: tools/ffmpeg/ffmpeg.exe");
                     return false;
                 }
+
+                Log.Debug("Usando FFmpeg desde: {FfmpegPath}", ffmpegPath);
 
                 // Configurar parámetros de calidad
                 var videoQuality = GetQualitySettings(quality, frameRate);
 
                 // Preparar argumentos de FFmpeg para captura de pantalla
                 // Usa gdigrab para capturar el escritorio en Windows
+                // -movflags +faststart: permite reproducir el video mientras se está grabando
+                // -tune zerolatency: reduce la latencia para mejor finalización
                 var arguments = $"-f gdigrab -framerate {frameRate} -i desktop " +
                                $"-vf \"scale=iw*{videoQuality.ScaleFactor}:ih*{videoQuality.ScaleFactor}\" " +
                                $"-c:v libx264 -preset {videoQuality.Preset} -crf {videoQuality.Crf} " +
+                               $"-tune zerolatency -movflags +faststart " +
                                $"-pix_fmt yuv420p -y \"{_currentVideoPath}\"";
 
                 var startInfo = new ProcessStartInfo
@@ -94,15 +99,39 @@ public static class VideoRecorder
                 };
 
                 _ffmpegProcess = new Process { StartInfo = startInfo };
+                
+                // Iniciar captura asíncrona de errores para debugging
+                var errorOutput = new System.Text.StringBuilder();
+                _ffmpegProcess.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        errorOutput.AppendLine(e.Data);
+                        // Log errores importantes en tiempo real
+                        if (e.Data.Contains("error", StringComparison.OrdinalIgnoreCase) ||
+                            e.Data.Contains("failed", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Log.Warning("FFmpeg: {ErrorLine}", e.Data);
+                        }
+                    }
+                };
+                
                 _ffmpegProcess.Start();
+                _ffmpegProcess.BeginErrorReadLine();
 
                 // Esperar un momento para verificar que inició correctamente
-                Thread.Sleep(500);
+                Thread.Sleep(1000);
                 
-                if (_ffmpegProcess.HasExited && _ffmpegProcess.ExitCode != 0)
+                if (_ffmpegProcess.HasExited)
                 {
-                    var error = _ffmpegProcess.StandardError.ReadToEnd();
-                    Log.Error("FFmpeg falló al iniciar: {Error}", error);
+                    var error = errorOutput.ToString();
+                    if (string.IsNullOrEmpty(error))
+                    {
+                        error = _ffmpegProcess.StandardError.ReadToEnd();
+                    }
+                    Log.Error("FFmpeg falló al iniciar (código: {ExitCode}). Error: {Error}", 
+                        _ffmpegProcess.ExitCode, error);
+                    Log.Error("Argumentos usados: {Arguments}", arguments);
                     _ffmpegProcess.Dispose();
                     _ffmpegProcess = null;
                     _currentVideoPath = null;
@@ -140,30 +169,46 @@ public static class VideoRecorder
 
             try
             {
+                var videoPath = _currentVideoPath;
+                
                 // Enviar señal de terminación a FFmpeg (q para salir graciosamente)
                 if (!_ffmpegProcess.HasExited)
                 {
                     try
                     {
+                        Log.Debug("Enviando señal de terminación a FFmpeg...");
                         _ffmpegProcess.StandardInput.Write('q');
                         _ffmpegProcess.StandardInput.Flush();
                         _ffmpegProcess.StandardInput.Close();
+                        
+                        // Dar tiempo a FFmpeg para que finalice correctamente el archivo
+                        // Esperar hasta 10 segundos para que termine graciosamente
+                        if (!_ffmpegProcess.WaitForExit(10000))
+                        {
+                            Log.Warning("FFmpeg no terminó en 10 segundos, forzando cierre...");
+                            _ffmpegProcess.Kill();
+                            _ffmpegProcess.WaitForExit(3000);
+                        }
+                        else
+                        {
+                            Log.Debug("FFmpeg terminó correctamente (código: {ExitCode})", _ffmpegProcess.ExitCode);
+                        }
                     }
                     catch (Exception ex)
                     {
                         Log.Debug(ex, "No se pudo enviar señal de terminación a FFmpeg, forzando cierre...");
-                    }
-                    
-                    // Esperar a que termine (máximo 5 segundos)
-                    if (!_ffmpegProcess.WaitForExit(5000))
-                    {
-                        Log.Warning("FFmpeg no terminó en 5 segundos, forzando cierre...");
-                        _ffmpegProcess.Kill();
-                        _ffmpegProcess.WaitForExit(2000);
+                        try
+                        {
+                            _ffmpegProcess.Kill();
+                            _ffmpegProcess.WaitForExit(3000);
+                        }
+                        catch { }
                     }
                 }
 
-                var videoPath = _currentVideoPath;
+                // Esperar un momento adicional para asegurar que el archivo se escribió completamente
+                Thread.Sleep(500);
+                
                 _ffmpegProcess.Dispose();
                 _ffmpegProcess = null;
                 _isRecording = false;
@@ -250,29 +295,40 @@ public static class VideoRecorder
     }
 
     /// <summary>
-    /// Busca FFmpeg en el PATH o ubicaciones comunes.
+    /// Busca FFmpeg en ubicaciones del proyecto primero, luego en PATH.
+    /// Prioriza tools/ffmpeg/ffmpeg.exe dentro del proyecto.
     /// </summary>
     private static string? FindFfmpeg()
     {
-        // Buscar en PATH
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-        if (!string.IsNullOrEmpty(pathEnv))
+        Log.Debug("Buscando FFmpeg...");
+
+        // 1. PRIORIDAD: Buscar en tools/ffmpeg/ del proyecto (ubicación preferida)
+        var projectRoot = GetProjectRootDirectory();
+        if (!string.IsNullOrEmpty(projectRoot))
         {
-            var paths = pathEnv.Split(Path.PathSeparator);
-            foreach (var path in paths)
+            var projectFfmpegPath = Path.Combine(projectRoot, "tools", "ffmpeg", "ffmpeg.exe");
+            if (File.Exists(projectFfmpegPath))
             {
-                var ffmpegPath = Path.Combine(path, "ffmpeg.exe");
-                if (File.Exists(ffmpegPath))
-                {
-                    return ffmpegPath;
-                }
+                Log.Information("FFmpeg encontrado en el proyecto: {Path}", projectFfmpegPath);
+                return projectFfmpegPath;
             }
+            Log.Debug("FFmpeg no encontrado en: {Path}", projectFfmpegPath);
         }
 
-        // Buscar en el directorio actual y subdirectorios comunes
+        // 2. Buscar en el directorio de ejecución de la aplicación
+        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        var baseFfmpegPath = Path.Combine(baseDirectory, "ffmpeg.exe");
+        if (File.Exists(baseFfmpegPath))
+        {
+            Log.Information("FFmpeg encontrado en directorio de ejecución: {Path}", baseFfmpegPath);
+            return baseFfmpegPath;
+        }
+
+        // 3. Buscar en el directorio actual y subdirectorios comunes
         var currentDir = Directory.GetCurrentDirectory();
         var commonLocations = new[]
         {
+            Path.Combine(currentDir, "tools", "ffmpeg", "ffmpeg.exe"),
             Path.Combine(currentDir, "ffmpeg.exe"),
             Path.Combine(currentDir, "tools", "ffmpeg.exe"),
             Path.Combine(currentDir, "bin", "ffmpeg.exe"),
@@ -283,11 +339,68 @@ public static class VideoRecorder
         {
             if (File.Exists(location))
             {
+                Log.Information("FFmpeg encontrado en ubicación común: {Path}", location);
                 return location;
             }
         }
 
+        // 4. Buscar en PATH del sistema
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+        if (!string.IsNullOrEmpty(pathEnv))
+        {
+            var paths = pathEnv.Split(Path.PathSeparator);
+            foreach (var path in paths)
+            {
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                var ffmpegPath = Path.Combine(path, "ffmpeg.exe");
+                if (File.Exists(ffmpegPath))
+                {
+                    Log.Information("FFmpeg encontrado en PATH: {Path}", ffmpegPath);
+                    return ffmpegPath;
+                }
+            }
+        }
+
+        Log.Warning("FFmpeg no encontrado en ninguna ubicación. La grabación de video no estará disponible.");
+        Log.Information("Para habilitar grabación de video, coloca ffmpeg.exe en: tools/ffmpeg/ffmpeg.exe (recomendado)");
+        
         return null;
+    }
+
+    /// <summary>
+    /// Intenta obtener el directorio raíz del proyecto buscando archivos característicos.
+    /// </summary>
+    private static string? GetProjectRootDirectory()
+    {
+        try
+        {
+            var currentDir = Directory.GetCurrentDirectory();
+            var directory = new DirectoryInfo(currentDir);
+
+            // Buscar hacia arriba hasta encontrar archivos característicos del proyecto
+            while (directory != null && directory.Exists)
+            {
+                var slnFiles = directory.GetFiles("*.sln");
+                var gitDir = directory.GetDirectories(".git").FirstOrDefault();
+                var toolsDir = directory.GetDirectories("tools").FirstOrDefault();
+
+                if (slnFiles.Length > 0 || gitDir != null || toolsDir != null)
+                {
+                    return directory.FullName;
+                }
+
+                directory = directory.Parent;
+            }
+
+            // Si no se encuentra, usar el directorio actual
+            return Directory.GetCurrentDirectory();
+        }
+        catch
+        {
+            return Directory.GetCurrentDirectory();
+        }
     }
 
     /// <summary>
