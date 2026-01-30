@@ -20,26 +20,27 @@ namespace Hipos.Tests.Features
     [System.CodeDom.Compiler.GeneratedCodeAttribute("TechTalk.SpecFlow", "4.0.0.0")]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     [NUnit.Framework.TestFixtureAttribute()]
-    [NUnit.Framework.DescriptionAttribute("HIPOS login")]
-    [NUnit.Framework.CategoryAttribute("HIPOS")]
+    [NUnit.Framework.DescriptionAttribute("Calculadora de Windows")]
+    [NUnit.Framework.CategoryAttribute("Calculator")]
     [NUnit.Framework.CategoryAttribute("Smoke")]
-    public partial class HIPOSLoginFeature
+    public partial class CalculadoraDeWindowsFeature
     {
         
         private TechTalk.SpecFlow.ITestRunner testRunner;
         
         private static string[] featureTags = new string[] {
-                "HIPOS",
+                "Calculator",
                 "Smoke"};
         
-#line 1 "Login.feature"
+#line 1 "Calculator.feature"
 #line hidden
         
         [NUnit.Framework.OneTimeSetUpAttribute()]
         public virtual async System.Threading.Tasks.Task FeatureSetupAsync()
         {
             testRunner = TechTalk.SpecFlow.TestRunnerManager.GetTestRunnerForAssembly(null, NUnit.Framework.TestContext.CurrentContext.WorkerId);
-            TechTalk.SpecFlow.FeatureInfo featureInfo = new TechTalk.SpecFlow.FeatureInfo(new System.Globalization.CultureInfo("en"), "Features", "HIPOS login", "  As a user\r\n  I want to login to HIPOS\r\n  So that I can access the main screen", ProgrammingLanguage.CSharp, featureTags);
+            TechTalk.SpecFlow.FeatureInfo featureInfo = new TechTalk.SpecFlow.FeatureInfo(new System.Globalization.CultureInfo("en"), "Features", "Calculadora de Windows", "  Como usuario\r\n  Quiero usar la Calculadora de Windows\r\n  Para realizar operacio" +
+                    "nes básicas", ProgrammingLanguage.CSharp, featureTags);
             await testRunner.OnFeatureStartAsync(featureInfo);
         }
         
@@ -78,12 +79,20 @@ namespace Hipos.Tests.Features
         }
         
         [NUnit.Framework.TestAttribute()]
-        [NUnit.Framework.DescriptionAttribute("Successful login hides datactrl")]
-        public async System.Threading.Tasks.Task SuccessfulLoginHidesDatactrl()
+        [NUnit.Framework.DescriptionAttribute("Operación básica")]
+        [NUnit.Framework.TestCaseAttribute("5", "+", "3", "8", null)]
+        [NUnit.Framework.TestCaseAttribute("9", "-", "2", "7", null)]
+        [NUnit.Framework.TestCaseAttribute("4", "*", "3", "12", null)]
+        [NUnit.Framework.TestCaseAttribute("8", "/", "2", "4", null)]
+        public async System.Threading.Tasks.Task OperacionBasica(string operando1, string operador, string operando2, string resultado, string[] exampleTags)
         {
-            string[] tagsOfScenario = ((string[])(null));
+            string[] tagsOfScenario = exampleTags;
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Successful login hides datactrl", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            argumentsOfScenario.Add("operando1", operando1);
+            argumentsOfScenario.Add("operador", operador);
+            argumentsOfScenario.Add("operando2", operando2);
+            argumentsOfScenario.Add("resultado", resultado);
+            TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Operación básica", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 7
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -95,31 +104,22 @@ namespace Hipos.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 8
-    await testRunner.GivenAsync("the HIPOS login page is open", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+    await testRunner.GivenAsync("la Calculadora está abierta", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
 #line 9
-    await testRunner.WhenAsync("I login with employee \"-1\" and password \"000000\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+    await testRunner.WhenAsync(string.Format("pulso \"{0}\"", operando1), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
 #line 10
-    await testRunner.ThenAsync("the datactrl element should not exist", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+    await testRunner.AndAsync(string.Format("pulso \"{0}\"", operador), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 11
-    await testRunner.WhenAsync("I select the last available day in the calendar", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
+    await testRunner.AndAsync(string.Format("pulso \"{0}\"", operando2), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 12
-    await testRunner.ThenAsync("the date_picker element should not exist", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+    await testRunner.AndAsync("pulso \"=\"", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
 #line 13
-    await testRunner.WhenAsync("I click Yes on the confirmation messagebox", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
-#line hidden
-#line 14
-    await testRunner.WhenAsync("I click OK on the counting button", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
-#line hidden
-#line 15
-    await testRunner.WhenAsync("I click OK on the preview doc confirmation modal", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
-#line hidden
-#line 16
-    await testRunner.ThenAsync("the main menu page should display all required elements", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
+    await testRunner.ThenAsync(string.Format("el resultado es \"{0}\"", resultado), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
