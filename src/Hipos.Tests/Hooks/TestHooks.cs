@@ -402,6 +402,11 @@ public class TestHooks
             var appPath = _config.AppPath;
             var processName = Path.GetFileNameWithoutExtension(appPath);
             ForceCloseProcessByName(processName);
+            // Calculadora de Windows: calc.exe lanza el proceso UWP "Calculator"
+            if (processName.Equals("calc", StringComparison.OrdinalIgnoreCase))
+            {
+                ForceCloseProcessByName("Calculator");
+            }
 
             Log.Information("✓ Application closed completely");
         }
@@ -415,6 +420,10 @@ public class TestHooks
                 var appPath = _config.AppPath;
                 var processName = Path.GetFileNameWithoutExtension(appPath);
                 ForceCloseProcessByName(processName);
+                if (processName.Equals("calc", StringComparison.OrdinalIgnoreCase))
+                {
+                    ForceCloseProcessByName("Calculator");
+                }
             }
             catch (Exception finalEx)
             {
