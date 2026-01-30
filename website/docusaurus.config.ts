@@ -8,12 +8,12 @@ const config: Config = {
   favicon: 'img/favicon.ico',
 
   // URL de producción de tu sitio
-  url: 'https://yourusername.github.io',
+  url: 'https://akradeveloper.github.io',
   // Pathname base para tu proyecto (<projectName>/)
   baseUrl: '/Hipos/',
 
   // Configuración de GitHub Pages
-  organizationName: 'yourusername', // Cambiar por tu usuario/organización de GitHub
+  organizationName: 'Izertis', // Cambiar por tu usuario/organización de GitHub
   projectName: 'Hipos', // Nombre del repositorio
 
   onBrokenLinks: 'warn',
