@@ -13,7 +13,7 @@ const config: Config = {
   baseUrl: '/Hipos/',
 
   // Configuración de GitHub Pages
-  organizationName: 'Izertis', // Cambiar por tu usuario/organización de GitHub
+  organizationName: 'Akradeveloper',
   projectName: 'Hipos', // Nombre del repositorio
 
   onBrokenLinks: 'warn',
@@ -41,7 +41,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/yourusername/Hipos/tree/main/website/',
+          editUrl: 'https://github.com/Akradeveloper/Hipos/tree/main/website/',
           showLastUpdateTime: false,
           showLastUpdateAuthor: false,
         },
@@ -79,7 +79,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/yourusername/Hipos',
+          href: 'https://github.com/Akradeveloper/Hipos',
           label: 'GitHub',
           position: 'right',
         },
@@ -127,7 +127,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/yourusername/Hipos',
+              href: 'https://github.com/Akradeveloper/Hipos',
             },
             {
               label: 'FlaUI Documentation',

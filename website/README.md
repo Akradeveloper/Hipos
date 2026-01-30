@@ -163,26 +163,10 @@ Estructura de navegación:
 
 El workflow `.github/workflows/docs.yml` automatiza el deploy:
 
-```yaml
-name: Deploy Docs
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'website/**'
+- **Build**: instala dependencias en `website/`, ejecuta `npm run build` y sube el artifact con `upload-pages-artifact`.
+- **Deploy**: el job `deploy` usa `actions/deploy-pages@v4` para publicar en GitHub Pages.
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - run: cd website && npm install && npm run build
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website/build
-```
+En **Settings → Pages** del repositorio debe estar seleccionado **Source: GitHub Actions** (no "Deploy from a branch"). El workflow se ejecuta en cada push a `main` cuando cambian `website/**` o `.github/workflows/docs.yml`.
 
 ### Deploy Manual
 

@@ -541,40 +541,18 @@ jobs:
 
 ### Publish Documentation to GitHub Pages
 
-**1. Workflow for docs (docs.yml already included):**
+**1. Workflow for docs (`.github/workflows/docs.yml` already included):**
 
-```yaml
-name: Deploy Docs
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - working-directory: ./website
-        run: |
-          npm ci
-          npm run build
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website/build
-```
+The workflow has two jobs: **build** (checkout, setup Node, `npm ci` + `npm run build` in `website/`, then `upload-pages-artifact` with `path: ./website/build`) and **deploy** (uses `actions/deploy-pages@v4` to publish the artifact).
 
 **2. Enable GitHub Pages:**
 - Repo → Settings → Pages
-- Source: Deploy from a branch
-- Branch: gh-pages / root
+- **Build and deployment → Source:** select **GitHub Actions** (not "Deploy from a branch")
+
+No branch or folder needs to be configured; the workflow publishes the Docusaurus build automatically.
 
 **3. Access:**
-`https://yourusername.github.io/Hipos/`
+`https://<usuario-o-org>.github.io/Hipos/`
 
 ### Artifact Retention
 

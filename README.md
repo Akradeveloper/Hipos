@@ -45,7 +45,7 @@ Framework enterprise de automatización para aplicaciones Windows (Win32, WPF, W
 
 ```bash
 # 1. Clonar repositorio
-git clone https://github.com/yourusername/Hipos.git
+git clone https://github.com/Akradeveloper/Hipos.git
 cd Hipos
 
 # 2. Restaurar dependencias
@@ -405,13 +405,10 @@ mkdir actions-runner && cd actions-runner
 
 ### Publicar Docs a GitHub Pages
 
-```bash
-# Habilitar GitHub Pages en repo settings
-# Branch: gh-pages
-
-# El workflow docs.yml publica automáticamente en push a main
-# Acceder en: https://yourusername.github.io/Hipos/
-```
+1. En **Settings → Pages** del repositorio, en **Build and deployment → Source** selecciona **GitHub Actions** (no "Deploy from a branch").
+2. El workflow `.github/workflows/docs.yml` publica automáticamente en cada push a `main` cuando cambian archivos en `website/**` o el propio workflow.
+3. No hace falta configurar rama ni carpeta; el job de Actions sube el build de Docusaurus.
+4. La URL del sitio queda: [https://akradeveloper.github.io/Hipos/](https://akradeveloper.github.io/Hipos/) (con `baseUrl: '/Hipos/'` ya configurado en Docusaurus).
 
 ## 🛠️ Tech Stack
 
@@ -610,8 +607,8 @@ Este proyecto está bajo la licencia MIT. Ver archivo [LICENSE](LICENSE) para de
 ## 📞 Soporte
 
 - 📖 **Documentación**: [Portal Docusaurus](./website/docs/intro.md)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/Hipos/issues)
-- 💬 **Discusiones**: [GitHub Discussions](https://github.com/yourusername/Hipos/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/Akradeveloper/Hipos/issues)
+- 💬 **Discusiones**: [GitHub Discussions](https://github.com/Akradeveloper/Hipos/discussions)
 
 ---
 
